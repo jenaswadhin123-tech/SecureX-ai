@@ -605,11 +605,31 @@ with tabs[4]:
         acoustic_features = res.get("acoustic_features") or {}
         if acoustic_features:
             st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Acoustic Feature Matrix</h5>", unsafe_allow_html=True)
-            acoustic_table = pd.DataFrame(
-                [(name.replace("_", " ").title(), value) for name, value in acoustic_features.items()],
-                columns=["Feature", "Value"],
-            )
-            st.dataframe(acoustic_table, hide_index=True, use_container_width=True)
+            feature_specs = [
+                ("f0_mean_hz", "Pitch mean", "Hz"),
+                ("f0_std_hz", "Pitch variation", "Hz"),
+                ("f0_jitter", "Pitch jitter", "ratio"),
+                ("voicing_ratio", "Voicing ratio", "%"),
+                ("spectral_centroid_hz", "Spectral centroid", "Hz"),
+                ("spectral_bandwidth_hz", "Spectral bandwidth", "Hz"),
+                ("spectral_flatness", "Spectral flatness", "index"),
+                ("spectral_rolloff_hz", "Spectral rolloff", "Hz"),
+                ("zcr_mean", "Zero crossing rate", "zcr"),
+                ("rms_energy", "RMS energy", "rms"),
+                ("duration_sec", "Duration", "sec"),
+            ]
+            feature_columns = st.columns(4)
+            for feature_index, (feature_name, feature_label, feature_unit) in enumerate(feature_specs):
+                if feature_name not in acoustic_features:
+                    continue
+                feature_value = acoustic_features[feature_name]
+                if feature_unit == "%":
+                    display_value = f"{float(feature_value) * 100:.1f}%"
+                elif isinstance(feature_value, float):
+                    display_value = f"{feature_value:.3f} {feature_unit}"
+                else:
+                    display_value = f"{feature_value} {feature_unit}"
+                feature_columns[feature_index % 4].metric(feature_label, display_value)
         p_col1, p_col2 = st.columns([1.2, 1])
         with p_col1:
             st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Speech Authenticity Breakdown (AI vs. Human)</h5>", unsafe_allow_html=True)

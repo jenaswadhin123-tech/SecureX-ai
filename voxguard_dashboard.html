@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoxGuard - AI Voice Detection Dashboard</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at 75% 15%, #251347 0%, #0c0920 45%, #070716 100%);
+      color: #F7F7FF;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    .panel-card {
+      background: #11152D;
+      border: 1px solid #25294A;
+      border-radius: 18px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 35px rgba(116, 39, 255, 0.08);
+      transition: all 0.25s ease;
+    }
+    .panel-card:hover {
+      border-color: #3b3f6d;
+    }
+    .mic-button {
+      width: 138px;
+      height: 138px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #8C4DFF 0%, #6822E8 65%, #4913B8 100%);
+      border: 2px solid #9B5CFF;
+      box-shadow: 0 0 45px rgba(140, 77, 255, 0.65), inset 0 0 20px rgba(255, 255, 255, 0.25);
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .mic-button:hover {
+      transform: scale(1.04);
+      box-shadow: 0 0 60px rgba(155, 92, 255, 0.85);
+    }
+    button {
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    button::after {
+      content: "";
+      position: absolute;
+      inset: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.2);
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    button:hover::after {
+      animation: button-wave 0.7s ease-out;
+    }
+    @keyframes button-wave {
+      0% { width: 0; height: 0; opacity: 0.45; }
+      100% { width: 220%; height: 220%; opacity: 0; }
+    }
+    .mic-pulse {
+      animation: pulse-ring 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(140, 77, 255, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 24px rgba(140, 77, 255, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(140, 77, 255, 0); }
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #25294A;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="flex antialiased selection:bg-purple-600 selection:text-white">
+
+  <!-- ========================================================================= -->
+  <!-- SIDEBAR (Width 295px) -->
+  <!-- ========================================================================= -->
+  <aside class="w-[295px] min-h-screen bg-gradient-to-b from-[#17133B] to-[#0D0D25] border-r border-white/5 flex flex-col justify-between p-7 flex-shrink-0 z-20">
+    <div>
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3.5 mb-10 pt-2">
+        <!-- Purple Waveform Icon -->
+        <div class="w-10 h-10 flex items-center justify-center">
+          <svg class="w-9 h-9 text-[#8C4DFF]" viewBox="0 0 36 36" fill="currentColor">
+            <rect x="2" y="14" width="3" height="8" rx="1.5" />
+            <rect x="8" y="9" width="3" height="18" rx="1.5" />
+            <rect x="14" y="4" width="3" height="28" rx="1.5" />
+            <rect x="20" y="8" width="3" height="20" rx="1.5" />
+            <rect x="26" y="12" width="3" height="12" rx="1.5" />
+            <rect x="32" y="15" width="3" height="6" rx="1.5" />
+          </svg>
+        </div>
+        <div>
+          <div class="text-[22px] font-bold tracking-tight text-white leading-none">
+            Vox<span class="text-[#8C4DFF]">Guard</span>
+          </div>
+          <div class="text-[11px] font-medium text-[#9295B5] mt-1.5 tracking-wider uppercase">
+            AI Voice Detection
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation List -->
+      <nav class="space-y-2">
+        <!-- Active Home Nav -->
+        <a href="#home" class="flex items-center gap-4 px-4 py-3.5 rounded-[12px] bg-gradient-to-r from-[#7427FF] to-[#9B5CFF] text-white font-medium shadow-[0_4px_25px_rgba(116,39,255,0.45)] transition">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
+          <span class="text-[15px]">Home</span>
+        </a>
+
+        <!-- History -->
+        <a href="#history" class="flex items-center gap-4 px-4 py-3.5 rounded-[12px] text-[#9295B5] hover:text-white hover:bg-white/5 transition font-medium">
+          <svg class="w-5 h-5 text-[#9295B5]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span class="text-[15px]">History</span>
+        </a>
+
+        <!-- Settings -->
+        <a href="#settings" class="flex items-center gap-4 px-4 py-3.5 rounded-[12px] text-[#9295B5] hover:text-white hover:bg-white/5 transition font-medium">
+          <svg class="w-5 h-5 text-[#9295B5]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span class="text-[15px]">Settings</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Sidebar Footer -->
+    <div class="pt-6 border-t border-white/5">
+      <div class="text-[13px] font-semibold text-white/90">Safer Voices</div>
+      <div class="text-[12px] text-[#9295B5]">Brighter Tomorrow</div>
+      <div class="w-8 h-[2px] bg-[#8C4DFF] mt-2 rounded-full"></div>
+    </div>
+  </aside>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN CONTENT AREA -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 px-10 pt-10 pb-8 flex flex-col justify-between max-w-[1340px]">
+    <div>
+      <!-- Top Header Row -->
+      <div class="flex items-start justify-between mb-8">
+        <div>
+          <h1 class="text-[44px] font-extrabold text-white tracking-tight leading-none mb-3">
+            Voice Authenticity <span class="text-[#8C4DFF]">Check</span>
+          </h1>
+          <p class="text-[15px] text-[#9699B8] font-normal">
+            Upload or record a voice sample to detect whether it is human or AI-generated.
+          </p>
+        </div>
+
+        <!-- Top Right Profile & Caption -->
+        <div class="text-right">
+          <div class="text-[13px] text-[#9295B5] mb-2 font-medium">Simple. Secure. Reliable.</div>
+          <div class="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-[#17133B] border border-[#2D2355] shadow-sm hover:border-[#8C4DFF]/40 cursor-pointer transition">
+            <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-[#7427FF] to-[#9B5CFF] flex items-center justify-center text-white text-xs font-semibold">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+            <span class="text-[13px] font-semibold text-white">Om Nayak</span>
+            <svg class="w-3.5 h-3.5 text-[#9295B5]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- 2x2 DASHBOARD GRID -->
+      <!-- ===================================================================== -->
+      <div class="grid grid-cols-12 gap-5">
+
+        <!-- CARD 1: Voice Input (Col 1-6 or 52% width) -->
+        <div class="col-span-12 lg:col-span-7 panel-card p-6 flex flex-col justify-between min-h-[350px]">
+          <!-- Input Header Tabs -->
+          <div class="flex items-center gap-2 mb-6">
+            <button id="tabRecord" onclick="switchTab('record')" class="flex items-center gap-2 px-5 py-2.5 rounded-[12px] bg-gradient-to-r from-[#7427FF] to-[#9B5CFF] text-white font-semibold text-[14px] shadow-[0_4px_20px_rgba(116,39,255,0.4)] transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+              </svg>
+              <span>Record Audio</span>
+            </button>
+            <button id="tabUpload" onclick="switchTab('upload')" class="flex items-center gap-2 px-5 py-2.5 rounded-[12px] bg-[#1E2142] text-[#9295B5] hover:text-white font-medium text-[14px] hover:bg-[#25294E] transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              <span>Upload Audio</span>
+            </button>
+          </div>
+
+          <!-- Interactive Area -->
+          <div id="recordSection" class="flex flex-col items-center justify-center my-auto py-2">
+            <!-- Large Glowing Mic Button -->
+            <button id="micBtn" onclick="toggleRecord()" class="mic-button flex items-center justify-center mb-4 group">
+              <svg id="micIcon" class="w-14 h-14 text-white group-hover:scale-110 transition duration-200" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+              </svg>
+            </button>
+            <div id="recStatusText" class="text-[15px] font-medium text-white mb-1">Click to start recording</div>
+            <div id="recTimer" class="text-[13px] text-[#696C8E] font-mono tracking-wider">00:00 / 00:10</div>
+          </div>
+
+          <!-- Upload Dropzone (Hidden by default) -->
+          <div id="uploadSection" class="hidden flex-col items-center justify-center my-auto py-6 border border-dashed border-[#2F3461] rounded-[16px] bg-[#0E1126]/60 p-6 text-center cursor-pointer hover:border-[#8C4DFF] transition" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" class="hidden" accept="audio/*" onchange="handleFileSelect(event)">
+            <div class="w-16 h-16 rounded-full bg-[#8C4DFF]/15 flex items-center justify-center mb-3">
+              <svg class="w-8 h-8 text-[#8C4DFF]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+              </svg>
+            </div>
+            <div id="uploadFileName" class="text-[15px] font-semibold text-white">Click or drag audio file here</div>
+            <div class="text-[12px] text-[#9295B5] mt-1">Supports WAV, MP3, FLAC, OGG, M4A</div>
+          </div>
+
+          <!-- Action buttons row -->
+          <div class="flex items-center justify-between pt-4 border-t border-white/5">
+            <span class="text-xs text-[#696C8E]">Noise cancellation: ON</span>
+            <button onclick="runDemoAnalysis()" class="px-4 py-1.5 rounded-lg bg-[#8C4DFF]/20 hover:bg-[#8C4DFF]/30 text-[#A675FF] hover:text-white text-xs font-semibold border border-[#8C4DFF]/30 transition">
+              Run Sample Analysis
+            </button>
+          </div>
+        </div>
+
+        <!-- CARD 2: Prediction Result (Col 7-12 or 48% width) -->
+        <div class="col-span-12 lg:col-span-5 panel-card p-6 flex flex-col justify-between min-h-[350px]">
+          <!-- Header with Shield & Completed badge -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2.5">
+              <svg class="w-5 h-5 text-[#8C4DFF]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+              <h3 class="text-[16px] font-semibold text-white">Prediction Result</h3>
+            </div>
+            <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#20E39A]/15 border border-[#20E39A]/30 text-[#20E39A] text-[12px] font-semibold">
+              <span class="w-2 h-2 rounded-full bg-[#20E39A] animate-pulse"></span>
+              <span>Completed</span>
+            </div>
+          </div>
+
+          <!-- Green Luminous Result Banner (Likely Human) -->
+          <div id="resultBanner" class="p-4 rounded-[14px] bg-gradient-to-r from-[#075338] via-[#096645] to-[#0D7A54] border border-[#20E39A]/40 flex items-center gap-4 shadow-[0_8px_30px_rgba(32,227,154,0.18)] mb-5 transition-all">
+            <div id="resultAvatar" class="w-12 h-12 rounded-full bg-[#20E39A]/20 flex items-center justify-center text-white flex-shrink-0">
+              <svg class="w-6 h-6 text-[#20E39A]" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+            <div>
+              <div id="resultTitle" class="text-[20px] font-bold text-white leading-tight">Likely Human</div>
+              <div id="resultConf" class="text-[13px] text-[#A2F5D7] font-medium mt-0.5">81.0% confidence</div>
+            </div>
+          </div>
+
+          <!-- Probability Cards (2 Columns) -->
+          <div class="grid grid-cols-2 gap-3.5">
+            <!-- Human Probability -->
+            <div class="bg-[#171B38] border border-[#292E54] rounded-[12px] p-3.5">
+              <div class="text-[12px] text-[#9295B5] font-medium mb-1">Human Probability</div>
+              <div id="humanProbText" class="text-[20px] font-bold text-white mb-2.5">81.0%</div>
+              <div class="w-full h-2 bg-[#0C0F24] rounded-full overflow-hidden">
+                <div id="humanProbBar" class="h-full bg-[#20E39A] rounded-full transition-all duration-700" style="width: 81%;"></div>
+              </div>
+            </div>
+
+            <!-- AI-generated Probability -->
+            <div class="bg-[#171B38] border border-[#292E54] rounded-[12px] p-3.5">
+              <div class="text-[12px] text-[#9295B5] font-medium mb-1">AI-generated Probability</div>
+              <div id="aiProbText" class="text-[20px] font-bold text-white mb-2.5">19.0%</div>
+              <div class="w-full h-2 bg-[#0C0F24] rounded-full overflow-hidden">
+                <div id="aiProbBar" class="h-full bg-[#FF5268] rounded-full transition-all duration-700" style="width: 19%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 3: Risk Level (Bottom Left, 48% width) -->
+        <div class="col-span-12 lg:col-span-5 panel-card p-6 flex flex-col justify-between min-h-[250px]">
+          <div class="flex items-center gap-2.5 mb-2">
+            <svg class="w-5 h-5 text-[#8C4DFF]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/>
+            </svg>
+            <h3 class="text-[16px] font-semibold text-white">Risk Level</h3>
+          </div>
+
+          <div class="flex items-center justify-around py-2">
+            <!-- Donut SVG -->
+            <div class="relative w-36 h-36 flex items-center justify-center">
+              <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 120 120">
+                <!-- Background track -->
+                <circle cx="60" cy="60" r="45" fill="transparent" stroke="#1D2245" stroke-width="14" />
+                <!-- Green Segment (Human = 81% -> circumference = 282.74, 81% = 229) -->
+                <circle id="donutHuman" cx="60" cy="60" r="45" fill="transparent" stroke="#20E39A" stroke-width="14" stroke-dasharray="282.74" stroke-dashoffset="53.7" stroke-linecap="round" class="transition-all duration-700" />
+                <!-- Red Segment (AI = 19%) -->
+                <circle id="donutAI" cx="60" cy="60" r="45" fill="transparent" stroke="#FF5268" stroke-width="14" stroke-dasharray="282.74" stroke-dashoffset="229" stroke-linecap="round" class="transition-all duration-700" />
+              </svg>
+              <!-- Center Text -->
+              <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span id="riskCenterTitle" class="text-[14px] font-bold text-[#20E39A] leading-tight">Low</span>
+                <span id="riskCenterSub" class="text-[14px] font-bold text-[#20E39A] leading-tight">Risk</span>
+              </div>
+            </div>
+
+            <!-- Legend Items -->
+            <div class="space-y-3.5">
+              <div class="flex items-center gap-2.5">
+                <span class="w-3 h-3 rounded-full bg-[#20E39A] shadow-[0_0_10px_#20E39A]"></span>
+                <span id="legendHuman" class="text-[14px] font-medium text-white/90">Human (81.0%)</span>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <span class="w-3 h-3 rounded-full bg-[#FF5268] shadow-[0_0_10px_#FF5268]"></span>
+                <span id="legendAI" class="text-[14px] font-medium text-white/90">AI-generated (19.0%)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 4: Suggestions (Bottom Right, 52% width) -->
+        <div class="col-span-12 lg:col-span-7 panel-card p-6 flex flex-col justify-between min-h-[250px]">
+          <div class="flex items-center gap-2.5 mb-3">
+            <svg class="w-5 h-5 text-[#8C4DFF]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+            <h3 class="text-[16px] font-semibold text-white">Suggestions</h3>
+          </div>
+
+          <!-- Suggestion Box with Checkmark -->
+          <div id="suggestionCard" class="bg-[#171B38] border border-[#292E54] rounded-[16px] p-5 flex items-center gap-4 my-auto">
+            <div id="suggIconBg" class="w-11 h-11 rounded-full bg-[#20E39A] flex items-center justify-center text-[#090A20] flex-shrink-0 font-bold shadow-[0_0_20px_rgba(32,227,154,0.4)]">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+            <div>
+              <h4 id="suggTitle" class="text-[16px] font-semibold text-white">The audio is likely from a human.</h4>
+              <p id="suggDesc" class="text-[13px] text-[#9295B5] mt-1">No action needed.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bottom Centered Tagline Footer -->
+    <div class="text-center pt-8 pb-2">
+      <div class="inline-flex items-center gap-4">
+        <div class="w-16 h-[1px] bg-gradient-to-r from-transparent to-[#7546D8]"></div>
+        <span class="text-[13px] font-medium text-[#777A9D] tracking-wide">AI for a Safer Digital World</span>
+        <div class="w-16 h-[1px] bg-gradient-to-l from-transparent to-[#7546D8]"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT CONTROLLER FOR UI INTERACTIONS & PREDICTIONS -->
+  <!-- ========================================================================= -->
+  <script>
+    let isRecording = false;
+    let timerSeconds = 0;
+    let timerInterval = null;
+    let isHumanState = true;
+
+    function switchTab(mode) {
+      const tabRecord = document.getElementById('tabRecord');
+      const tabUpload = document.getElementById('tabUpload');
+      const recordSection = document.getElementById('recordSection');
+      const uploadSection = document.getElementById('uploadSection');
+
+      if (mode === 'record') {
+        tabRecord.className = "flex items-center gap-2 px-5 py-2.5 rounded-[12px] bg-gradient-to-r from-[#7427FF] to-[#9B5CFF] text-white font-semibold text-[14px] shadow-[0_4px_20px_rgba(116,39,255,0.4)] transition";
+        tabUpload.className = "flex items-center gap-2 px-5 py-2.5 rounded-[12px] bg-[#1E2142] text-[#9295B5] hover:text-white font-medium text-[14px] hover:bg-[#25294E] transition";
+        recordSection.classList.remove('hidden');
+        recordSection.classList.add('flex');
+        uploadSection.classList.add('hidden');
+        uploadSection.classList.remove('flex');
+      } else {
+        tabUpload.className = "flex items-center gap-2 px-5 py-2.5 rounded-[12px] bg-gradient-to-r from-[#7427FF] to-[#9B5CFF] text-white font-semibold text-[14px] shadow-[0_4px_20px_rgba(116,39,255,0.4)] transition";
+        tabRecord.className = "flex items-center gap-2 px-5 py-2.5 rounded-[12px] bg-[#1E2142] text-[#9295B5] hover:text-white font-medium text-[14px] hover:bg-[#25294E] transition";
+        uploadSection.classList.remove('hidden');
+        uploadSection.classList.add('flex');
+        recordSection.classList.add('hidden');
+        recordSection.classList.remove('flex');
+      }
+    }
+
+    function toggleRecord() {
+      const micBtn = document.getElementById('micBtn');
+      const recStatus = document.getElementById('recStatusText');
+      const recTimer = document.getElementById('recTimer');
+
+      if (!isRecording) {
+        isRecording = true;
+        timerSeconds = 0;
+        micBtn.classList.add('mic-pulse');
+        recStatus.innerText = 'Listening... Speak now';
+        recStatus.classList.add('text-[#8C4DFF]');
+
+        timerInterval = setInterval(() => {
+          timerSeconds++;
+          const secFormatted = String(timerSeconds).padStart(2, '0');
+          recTimer.innerText = `00:${secFormatted} / 00:10`;
+          if (timerSeconds >= 10) {
+            toggleRecord();
+            updateUIWithPrediction(true, 86.5, 13.5);
+          }
+        }, 1000);
+      } else {
+        isRecording = false;
+        clearInterval(timerInterval);
+        micBtn.classList.remove('mic-pulse');
+        recStatus.innerText = 'Processing audio sample...';
+        recStatus.classList.remove('text-[#8C4DFF]');
+        setTimeout(() => {
+          recStatus.innerText = 'Click to start recording';
+          updateUIWithPrediction(true, 81.0, 19.0);
+        }, 800);
+      }
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        document.getElementById('uploadFileName').innerText = `Loaded: ${file.name}`;
+        // Automatically analyze uploaded file
+        const isAI = file.name.toLowerCase().includes('ai');
+        if (isAI) {
+          updateUIWithPrediction(false, 8.0, 92.0);
+        } else {
+          updateUIWithPrediction(true, 94.0, 6.0);
+        }
+      }
+    }
+
+    function runDemoAnalysis() {
+      // Toggle between Human and AI demo
+      isHumanState = !isHumanState;
+      if (isHumanState) {
+        updateUIWithPrediction(true, 81.0, 19.0);
+      } else {
+        updateUIWithPrediction(false, 7.5, 92.5);
+      }
+    }
+
+    function updateUIWithPrediction(isHuman, pHuman, pAI) {
+      const banner = document.getElementById('resultBanner');
+      const title = document.getElementById('resultTitle');
+      const conf = document.getElementById('resultConf');
+      const humanText = document.getElementById('humanProbText');
+      const aiText = document.getElementById('aiProbText');
+      const humanBar = document.getElementById('humanProbBar');
+      const aiBar = document.getElementById('aiProbBar');
+
+      const donutH = document.getElementById('donutHuman');
+      const donutA = document.getElementById('donutAI');
+      const riskTitle = document.getElementById('riskCenterTitle');
+      const riskSub = document.getElementById('riskCenterSub');
+      const legH = document.getElementById('legendHuman');
+      const legA = document.getElementById('legendAI');
+
+      const suggCard = document.getElementById('suggestionCard');
+      const suggIcon = document.getElementById('suggIconBg');
+      const suggTitle = document.getElementById('suggTitle');
+      const suggDesc = document.getElementById('suggDesc');
+
+      // Update text values
+      humanText.innerText = `${pHuman.toFixed(1)}%`;
+      aiText.innerText = `${pAI.toFixed(1)}%`;
+      humanBar.style.width = `${pHuman}%`;
+      aiBar.style.width = `${pAI}%`;
+
+      legH.innerText = `Human (${pHuman.toFixed(1)}%)`;
+      legA.innerText = `AI-generated (${pAI.toFixed(1)}%)`;
+
+      // Update Donut
+      const circumference = 282.74;
+      const humanOffset = circumference * (1 - pHuman / 100);
+      donutH.setAttribute('stroke-dashoffset', humanOffset);
+
+      if (isHuman) {
+        banner.className = "p-4 rounded-[14px] bg-gradient-to-r from-[#075338] via-[#096645] to-[#0D7A54] border border-[#20E39A]/40 flex items-center gap-4 shadow-[0_8px_30px_rgba(32,227,154,0.18)] mb-5 transition-all";
+        title.innerText = "Likely Human";
+        conf.innerText = `${pHuman.toFixed(1)}% confidence`;
+        conf.className = "text-[13px] text-[#A2F5D7] font-medium mt-0.5";
+
+        riskTitle.innerText = "Low";
+        riskSub.innerText = "Risk";
+        riskTitle.className = "text-[14px] font-bold text-[#20E39A] leading-tight";
+        riskSub.className = "text-[14px] font-bold text-[#20E39A] leading-tight";
+
+        suggIcon.className = "w-11 h-11 rounded-full bg-[#20E39A] flex items-center justify-center text-[#090A20] flex-shrink-0 font-bold shadow-[0_0_20px_rgba(32,227,154,0.4)]";
+        suggTitle.innerText = "The audio is likely from a human.";
+        suggDesc.innerText = "No action needed.";
+      } else {
+        banner.className = "p-4 rounded-[14px] bg-gradient-to-r from-[#59141D] via-[#751B27] to-[#8C2230] border border-[#FF5268]/40 flex items-center gap-4 shadow-[0_8px_30px_rgba(255,82,104,0.22)] mb-5 transition-all";
+        title.innerText = "Likely AI-generated";
+        conf.innerText = `${pAI.toFixed(1)}% confidence`;
+        conf.className = "text-[13px] text-[#FFC4CB] font-medium mt-0.5";
+
+        riskTitle.innerText = "High";
+        riskSub.innerText = "Risk";
+        riskTitle.className = "text-[14px] font-bold text-[#FF5268] leading-tight";
+        riskSub.className = "text-[14px] font-bold text-[#FF5268] leading-tight";
+
+        suggIcon.className = "w-11 h-11 rounded-full bg-[#FF5268] flex items-center justify-center text-white flex-shrink-0 font-bold shadow-[0_0_20px_rgba(255,82,104,0.4)]";
+        suggTitle.innerText = "Synthetic voice signatures detected.";
+        suggDesc.innerText = "Exercise caution before validating identity or transferring credentials.";
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+numpy
+scipy
+librosa
+soundfile
+scikit-learn
+joblib
+streamlit
+matplotlib
+openai-whisper
+requests>=2.28.0

@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.log
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+node_modules/
+dist/
+build/
+mongo_data/
+cyberguard/mongo_data/
+scratch/
+cyberguard/scratch/
+.DS_Store

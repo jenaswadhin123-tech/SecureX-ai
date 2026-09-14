@@ -1,0 +1,11 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+cyberguard/frontend/node_modules
+cyberguard/frontend/dist
+cyberguard/mongo_data
+.gemini

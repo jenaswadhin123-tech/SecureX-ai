@@ -8,3 +8,4 @@ streamlit
 matplotlib
 openai-whisper
 requests>=2.28.0
+pydantic>=2.0

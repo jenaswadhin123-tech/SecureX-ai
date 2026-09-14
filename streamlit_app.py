@@ -553,6 +553,18 @@ with tabs[3]:
 
 # TAB 5: VOICE ANALYZER
 with tabs[4]:
+    def reset_voice_analyzer():
+        """Clear voice inputs, cached result, and derived display state."""
+        for state_key in (
+            "voice_upload",
+            "voice_recording",
+            "last_voice_result",
+            "last_voice_file_key",
+            "last_voice_expl",
+            "last_audio_bytes",
+        ):
+            st.session_state.pop(state_key, None)
+
     st.markdown('<div class="card-panel">', unsafe_allow_html=True)
     st.markdown("""
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
@@ -563,14 +575,27 @@ with tabs[4]:
         </div>
     </div>
     """, unsafe_allow_html=True)
-    audio_file = st.file_uploader("Select Voice Recording (WAV, MP3, OGG, M4A, FLAC):", type=["wav", "mp3", "ogg", "m4a", "flac", "webm"])
-    if audio_file is not None:
-        st.audio(audio_file)
-        audio_bytes = audio_file.getvalue()
+    input_col, reset_col = st.columns([5, 1])
+    with input_col:
+        audio_file = st.file_uploader(
+            "Upload Voice Recording (WAV, MP3, OGG, M4A, FLAC):",
+            type=["wav", "mp3", "ogg", "m4a", "flac", "webm"],
+            key="voice_upload",
+        )
+        recorded_audio = st.audio_input("Or record a voice sample", key="voice_recording")
+    with reset_col:
+        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+        st.button("Reset", key="reset_voice", on_click=reset_voice_analyzer, use_container_width=True)
+
+    selected_audio = recorded_audio or audio_file
+    if selected_audio is not None:
+        st.audio(selected_audio)
+        audio_bytes = selected_audio.getvalue()
+        audio_name = selected_audio.name or "recorded_voice.wav"
         audio_key = hashlib.sha256(audio_bytes).hexdigest()
         if st.button("Analyze Voice Recording", type="primary"):
             with st.spinner("Analyzing Audio Recording..."):
-                res = analyze_uploaded_voice(audio_file.name, audio_bytes)
+                res = analyze_uploaded_voice(audio_name, audio_bytes)
                 add_event_to_store(res)
                 st.session_state["last_voice_result"] = dict(res)
                 st.session_state["last_voice_file_key"] = audio_key
@@ -584,15 +609,14 @@ with tabs[4]:
                 result_cols[3].metric("Risk", f"{res.get('risk_level', 'SAFE')} ({res.get('risk_score', 0)}/100)")
                 # Save raw audio bytes for waveform rendering
                 try:
-                    audio_file.seek(0)
-                    st.session_state["last_audio_bytes"] = audio_file.read()
+                    st.session_state["last_audio_bytes"] = audio_bytes
                 except Exception:
                     pass
 
         # Restore the cached result after any Streamlit rerun or app refresh.
         if st.session_state.get("last_voice_file_key") != audio_key:
             with st.spinner("Preparing voice analysis results..."):
-                res = analyze_uploaded_voice(audio_file.name, audio_bytes)
+                res = analyze_uploaded_voice(audio_name, audio_bytes)
             add_event_to_store(res)
             st.session_state["last_voice_result"] = dict(res)
             st.session_state["last_voice_file_key"] = audio_key

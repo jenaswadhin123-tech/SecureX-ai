@@ -18,6 +18,7 @@ import numpy as np
 from datetime import datetime
 import io
 import csv
+import hashlib
 
 # Safe Plotly & Librosa import
 try:
@@ -39,6 +40,16 @@ from cyberguard.backend.services.phishing_service import analyze_phishing_text
 from cyberguard.backend.services.account_service import analyze_account_log
 from cyberguard.backend.services.explanation_service import generate_explanation
 from cyberguard.backend.services.webhook_service import send_threat_alert
+
+
+@st.cache_data(show_spinner=False)
+def analyze_uploaded_voice(filename, audio_bytes):
+    """Cache voice analysis by uploaded audio so results survive reruns."""
+    from fastapi import UploadFile
+    from cyberguard.backend.services.voice_service import analyze_voice_file
+
+    upload = UploadFile(filename=filename, file=io.BytesIO(audio_bytes))
+    return analyze_voice_file(upload)
 
 # Page Configuration
 st.set_page_config(
@@ -496,14 +507,14 @@ with tabs[4]:
     audio_file = st.file_uploader("Select Voice Recording (WAV, MP3, OGG, M4A, FLAC):", type=["wav", "mp3", "ogg", "m4a", "flac", "webm"])
     if audio_file is not None:
         st.audio(audio_file)
+        audio_bytes = audio_file.getvalue()
+        audio_key = hashlib.sha256(audio_bytes).hexdigest()
         if st.button("Analyze Voice Recording", type="primary"):
             with st.spinner("Analyzing Audio Recording..."):
-                from fastapi import UploadFile
-                fastapi_upload = UploadFile(filename=audio_file.name, file=audio_file)
-                from cyberguard.backend.services.voice_service import analyze_voice_file
-                res = analyze_voice_file(fastapi_upload)
+                res = analyze_uploaded_voice(audio_file.name, audio_bytes)
                 add_event_to_store(res)
                 st.session_state["last_voice_result"] = dict(res)
+                st.session_state["last_voice_file_key"] = audio_key
                 if "transcription unavailable:" in res.get("source", ""):
                     st.warning("Voice classification completed, but transcription is unavailable in this deployment.")
                 st.success("Voice analysis complete")
@@ -524,6 +535,15 @@ with tabs[4]:
                     st.session_state["last_audio_bytes"] = audio_file.read()
                 except Exception:
                     pass
+
+        # Restore the cached result after any Streamlit rerun or app refresh.
+        if st.session_state.get("last_voice_file_key") != audio_key:
+            with st.spinner("Preparing voice analysis results..."):
+                res = analyze_uploaded_voice(audio_file.name, audio_bytes)
+            add_event_to_store(res)
+            st.session_state["last_voice_result"] = dict(res)
+            st.session_state["last_voice_file_key"] = audio_key
+            st.rerun()
 
         # ---------------------------------------------------------------------
         # AUDIO WAVEFORM & SPECTROGRAM GRAPHS UNDER ANALYZE BUTTON
@@ -596,6 +616,12 @@ with tabs[4]:
                 with st.spinner("Generating AI Analysis..."):
                     st.session_state["last_voice_expl"] = generate_explanation(res)
         st.markdown("<br>", unsafe_allow_html=True)
+        st.subheader("Voice analysis results")
+        result_cols = st.columns(4)
+        result_cols[0].metric("Verdict", res.get("voice_verdict", "N/A"))
+        result_cols[1].metric("AI confidence", f"{res.get('voice_confidence', 0)}%")
+        result_cols[2].metric("Scam score", f"{res.get('scam_score', 0)}/100")
+        result_cols[3].metric("Risk", f"{res.get('risk_level', 'SAFE')} ({res.get('risk_score', 0)}/100)")
         c1, c2, c3, c4 = st.columns(4)
         c1.markdown(f'<div class="metric-panel"><div><div class="metric-title">Voice Verdict</div><div class="metric-number" style="font-size:16px; color:#FB7185;">{res.get("voice_verdict", "N/A")}</div></div></div>', unsafe_allow_html=True)
         c2.markdown(f'<div class="metric-panel"><div><div class="metric-title">AI Confidence</div><div class="metric-number">{res.get("voice_confidence", 0)}%</div></div></div>', unsafe_allow_html=True)

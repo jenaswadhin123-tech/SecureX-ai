@@ -504,6 +504,8 @@ with tabs[4]:
                 res = analyze_voice_file(fastapi_upload)
                 add_event_to_store(res)
                 st.session_state["last_voice_result"] = res
+                if "transcription unavailable:" in res.get("source", ""):
+                    st.warning("Voice classification completed, but transcription is unavailable in this deployment.")
                 # Save raw audio bytes for waveform rendering
                 try:
                     audio_file.seek(0)

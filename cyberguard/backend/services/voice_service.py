@@ -95,8 +95,14 @@ def analyze_voice_file(upload: UploadFile) -> Dict[str, Any]:
     # 3️⃣ Acoustic analysis – label, confidence, acoustic summary, class probs
     label, confidence, acoustic_summary, class_probs = analyze_audio(model, audio_path)
 
-    # 4️⃣ Whisper transcription
-    transcript = transcribe_audio(audio_path)
+    # 4️⃣ Whisper transcription. The acoustic classifier remains useful when
+    # the hosted environment cannot download or load the optional Whisper model.
+    transcription_error = None
+    try:
+        transcript = transcribe_audio(audio_path)
+    except RuntimeError as exc:
+        transcript = ""
+        transcription_error = str(exc)
 
     # 5️⃣ Scam intent analysis (operates on transcript text)
     scam_result = analyze_scam_intent(transcript)
@@ -153,6 +159,7 @@ def analyze_voice_file(upload: UploadFile) -> Dict[str, Any]:
         evidence=evidence,
         recommendations=recommendations,
         explanation=None,
+        source=(f"voice_service; transcription unavailable: {transcription_error}" if transcription_error else "voice_service"),
     )
 
     # FastAPI will automatically convert the Pydantic model to a dict.

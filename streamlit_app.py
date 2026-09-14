@@ -503,7 +503,7 @@ with tabs[4]:
                 from cyberguard.backend.services.voice_service import analyze_voice_file
                 res = analyze_voice_file(fastapi_upload)
                 add_event_to_store(res)
-                st.session_state["last_voice_result"] = res
+                st.session_state["last_voice_result"] = dict(res)
                 if "transcription unavailable:" in res.get("source", ""):
                     st.warning("Voice classification completed, but transcription is unavailable in this deployment.")
                 # Save raw audio bytes for waveform rendering
@@ -512,6 +512,7 @@ with tabs[4]:
                     st.session_state["last_audio_bytes"] = audio_file.read()
                 except Exception:
                     pass
+                st.rerun()
 
         # ---------------------------------------------------------------------
         # AUDIO WAVEFORM & SPECTROGRAM GRAPHS UNDER ANALYZE BUTTON

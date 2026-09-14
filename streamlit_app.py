@@ -536,12 +536,6 @@ with tabs[4]:
                 result_cols[1].metric("AI confidence", f"{res.get('voice_confidence', 0)}%")
                 result_cols[2].metric("Scam score", f"{res.get('scam_score', 0)}/100")
                 result_cols[3].metric("Risk", f"{res.get('risk_level', 'SAFE')} ({res.get('risk_score', 0)}/100)")
-                if res.get("acoustic_features"):
-                    st.caption("Acoustic features")
-                    st.dataframe(
-                        pd.DataFrame([res["acoustic_features"]]).T.rename(columns={0: "Value"}),
-                        use_container_width=True,
-                    )
                 # Save raw audio bytes for waveform rendering
                 try:
                     audio_file.seek(0)
@@ -641,34 +635,6 @@ with tabs[4]:
         c3.markdown(f'<div class="metric-panel"><div><div class="metric-title">Scam Score</div><div class="metric-number" style="color:#FBBF24;">{res.get("scam_score", 0)}/100</div></div></div>', unsafe_allow_html=True)
         c4.markdown(f'<div class="metric-panel"><div><div class="metric-title">Category</div><div class="metric-number" style="font-size:13px; color:#3B9EFF;">{res.get("threat_category", "N/A")}</div></div></div>', unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
-        acoustic_features = res.get("acoustic_features") or {}
-        if acoustic_features:
-            st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Acoustic Feature Matrix</h5>", unsafe_allow_html=True)
-            feature_specs = [
-                ("f0_mean_hz", "Pitch mean", "Hz"),
-                ("f0_std_hz", "Pitch variation", "Hz"),
-                ("f0_jitter", "Pitch jitter", "ratio"),
-                ("voicing_ratio", "Voicing ratio", "%"),
-                ("spectral_centroid_hz", "Spectral centroid", "Hz"),
-                ("spectral_bandwidth_hz", "Spectral bandwidth", "Hz"),
-                ("spectral_flatness", "Spectral flatness", "index"),
-                ("spectral_rolloff_hz", "Spectral rolloff", "Hz"),
-                ("zcr_mean", "Zero crossing rate", "zcr"),
-                ("rms_energy", "RMS energy", "rms"),
-                ("duration_sec", "Duration", "sec"),
-            ]
-            feature_columns = st.columns(4)
-            for feature_index, (feature_name, feature_label, feature_unit) in enumerate(feature_specs):
-                if feature_name not in acoustic_features:
-                    continue
-                feature_value = acoustic_features[feature_name]
-                if feature_unit == "%":
-                    display_value = f"{float(feature_value) * 100:.1f}%"
-                elif isinstance(feature_value, float):
-                    display_value = f"{feature_value:.3f} {feature_unit}"
-                else:
-                    display_value = f"{feature_value} {feature_unit}"
-                feature_columns[feature_index % 4].metric(feature_label, display_value)
         p_col1, p_col2 = st.columns([1.2, 1])
         with p_col1:
             st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Speech Authenticity Breakdown (AI vs. Human)</h5>", unsafe_allow_html=True)
@@ -690,32 +656,6 @@ with tabs[4]:
             st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Acoustic Evidence</h5>", unsafe_allow_html=True)
             for item in res.get("evidence", []):
                 st.markdown(f'<div class="evidence-item"><span style="color:#FB7185; font-weight:700;">{item["name"]}</span><span style="color:#A1A1AA;">Weight: +{item["value"]}</span></div>', unsafe_allow_html=True)
-        if res.get("acoustic_features"):
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:12px;'>Acoustic Feature Matrix</h5>", unsafe_allow_html=True)
-            FEATURE_CONFIG = {
-                "duration_sec": ("Duration", "sec", "#38BDF8"),
-                "f0_mean_hz": ("Fundamental Pitch Mean", "Hz", "#818CF8"),
-                "f0_std_hz": ("Pitch Variation (Std)", "Hz", "#C084FC"),
-                "f0_jitter": ("Pitch Jitter", "ratio", "#F472B6"),
-                "voicing_ratio": ("Voicing Ratio", "%", "#34D399"),
-                "spectral_centroid_hz": ("Spectral Centroid", "Hz", "#FBBF24"),
-                "spectral_bandwidth_hz": ("Spectral Bandwidth", "Hz", "#FB923C"),
-                "spectral_flatness": ("Spectral Flatness", "index", "#F87171"),
-                "spectral_rolloff_hz": ("Spectral Rolloff Frequency", "Hz", "#E879F9"),
-                "zcr_mean": ("Zero Crossing Rate", "zcr", "#A7F3D0"),
-                "rms_energy": ("RMS Energy Intensity", "rms", "#67E8F9"),
-            }
-            f_cols = st.columns(3)
-            for idx, (k, v) in enumerate(res["acoustic_features"].items()):
-                fc = f_cols[idx % 3]
-                label, unit, color = FEATURE_CONFIG.get(k, (k.replace("_", " ").title(), "", "#38BDF8"))
-                val_formatted = f"{v:.4f}" if isinstance(v, float) else str(v)
-                if unit == "%" and isinstance(v, float):
-                    val_formatted = f"{v * 100:.1f}%"
-                elif unit:
-                    val_formatted = f"{val_formatted} <span style='font-size:11px; color:#A1A1AA;'>{unit}</span>"
-                fc.markdown(f'<div style="background:#0B0E14; border:1px solid #232730; border-left:4px solid {color}; padding:12px 14px; border-radius:10px; margin-bottom:8px;"><div style="font-size:10px; font-weight:700; color:#64748B; text-transform:uppercase;">{label}</div><div style="font-size:17px; font-weight:800; font-family:\'JetBrains Mono\', monospace; color:#FFFFFF; margin-top:2px;">{val_formatted}</div></div>', unsafe_allow_html=True)
         if "last_voice_expl" in st.session_state:
             st.markdown(f'<div class="ai-box"><div style="color:#3B9EFF; font-weight:700; font-size:12px; margin-bottom:4px;">✨ AI Threat Assessment</div><div style="color:#CBD5E1; font-size:12px; line-height:1.6;">{st.session_state["last_voice_expl"]}</div></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)

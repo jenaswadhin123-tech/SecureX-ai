@@ -104,6 +104,52 @@ st.markdown("""
         margin-top: 4px;
     }
 
+    .acoustic-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin: 12px 0 22px;
+    }
+    .acoustic-card {
+        min-height: 86px;
+        background: #0B0E14;
+        border: 1px solid #232730;
+        border-left: 5px solid var(--feature-color);
+        border-radius: 14px;
+        padding: 18px 22px;
+    }
+    .acoustic-label {
+        color: #64748B;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+    }
+    .acoustic-value {
+        color: #F8FAFC;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 28px;
+        font-weight: 800;
+        line-height: 1.25;
+        margin-top: 10px;
+    }
+    .acoustic-unit {
+        color: #A1A1AA;
+        font-size: 15px;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+    @media (max-width: 900px) {
+        .acoustic-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 600px) {
+        .acoustic-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
     [data-testid="stMetric"] {
         overflow: visible !important;
     }
@@ -629,6 +675,38 @@ with tabs[4]:
         result_cols[1].metric("AI confidence", f"{res.get('voice_confidence', 0)}%")
         result_cols[2].metric("Scam score", f"{res.get('scam_score', 0)}/100")
         result_cols[3].metric("Risk", f"{res.get('risk_level', 'SAFE')} ({res.get('risk_score', 0)}/100)")
+        acoustic_features = res.get("acoustic_features") or {}
+        if acoustic_features:
+            feature_specs = [
+                ("duration_sec", "Duration", "sec", "#38BDF8"),
+                ("f0_mean_hz", "Fundamental pitch mean", "Hz", "#818CF8"),
+                ("f0_std_hz", "Pitch variation (std)", "Hz", "#C084FC"),
+                ("f0_jitter", "Pitch jitter", "ratio", "#F472B6"),
+                ("voicing_ratio", "Voicing ratio", "%", "#34D399"),
+                ("spectral_centroid_hz", "Spectral centroid", "Hz", "#FBBF24"),
+                ("spectral_bandwidth_hz", "Spectral bandwidth", "Hz", "#FB923C"),
+                ("spectral_flatness", "Spectral flatness", "index", "#F87171"),
+                ("spectral_rolloff_hz", "Spectral rolloff frequency", "Hz", "#E879F9"),
+                ("zcr_mean", "Zero crossing rate", "zcr", "#A7F3D0"),
+                ("rms_energy", "RMS energy intensity", "rms", "#67E8F9"),
+            ]
+            feature_cards = []
+            for feature_name, feature_label, feature_unit, feature_color in feature_specs:
+                if feature_name not in acoustic_features:
+                    continue
+                feature_value = acoustic_features[feature_name]
+                if feature_unit == "%":
+                    display_value = f"{float(feature_value) * 100:.1f}"
+                else:
+                    display_value = f"{float(feature_value):.4f}"
+                feature_cards.append(
+                    f'<div class="acoustic-card" style="--feature-color:{feature_color}">'
+                    f'<div class="acoustic-label">{feature_label}</div>'
+                    f'<div class="acoustic-value">{display_value}<span class="acoustic-unit">{feature_unit}</span></div>'
+                    "</div>"
+                )
+            st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin:20px 0 8px;'>Acoustic Feature Matrix</h5>", unsafe_allow_html=True)
+            st.markdown(f'<div class="acoustic-grid">{"".join(feature_cards)}</div>', unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
         c1.markdown(f'<div class="metric-panel"><div><div class="metric-title">Voice Verdict</div><div class="metric-number" style="font-size:16px; color:#FB7185;">{res.get("voice_verdict", "N/A")}</div></div></div>', unsafe_allow_html=True)
         c2.markdown(f'<div class="metric-panel"><div><div class="metric-title">AI Confidence</div><div class="metric-number">{res.get("voice_confidence", 0)}%</div></div></div>', unsafe_allow_html=True)

@@ -602,6 +602,14 @@ with tabs[4]:
         c3.markdown(f'<div class="metric-panel"><div><div class="metric-title">Scam Score</div><div class="metric-number" style="color:#FBBF24;">{res.get("scam_score", 0)}/100</div></div></div>', unsafe_allow_html=True)
         c4.markdown(f'<div class="metric-panel"><div><div class="metric-title">Category</div><div class="metric-number" style="font-size:13px; color:#3B9EFF;">{res.get("threat_category", "N/A")}</div></div></div>', unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
+        acoustic_features = res.get("acoustic_features") or {}
+        if acoustic_features:
+            st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Acoustic Feature Matrix</h5>", unsafe_allow_html=True)
+            acoustic_table = pd.DataFrame(
+                [(name.replace("_", " ").title(), value) for name, value in acoustic_features.items()],
+                columns=["Feature", "Value"],
+            )
+            st.dataframe(acoustic_table, hide_index=True, use_container_width=True)
         p_col1, p_col2 = st.columns([1.2, 1])
         with p_col1:
             st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Speech Authenticity Breakdown (AI vs. Human)</h5>", unsafe_allow_html=True)

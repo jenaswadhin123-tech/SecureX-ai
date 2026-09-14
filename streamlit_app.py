@@ -506,13 +506,24 @@ with tabs[4]:
                 st.session_state["last_voice_result"] = dict(res)
                 if "transcription unavailable:" in res.get("source", ""):
                     st.warning("Voice classification completed, but transcription is unavailable in this deployment.")
+                st.success("Voice analysis complete")
+                result_cols = st.columns(4)
+                result_cols[0].metric("Verdict", res.get("voice_verdict", "N/A"))
+                result_cols[1].metric("AI confidence", f"{res.get('voice_confidence', 0)}%")
+                result_cols[2].metric("Scam score", f"{res.get('scam_score', 0)}/100")
+                result_cols[3].metric("Risk", f"{res.get('risk_level', 'SAFE')} ({res.get('risk_score', 0)}/100)")
+                if res.get("acoustic_features"):
+                    st.caption("Acoustic features")
+                    st.dataframe(
+                        pd.DataFrame([res["acoustic_features"]]).T.rename(columns={0: "Value"}),
+                        use_container_width=True,
+                    )
                 # Save raw audio bytes for waveform rendering
                 try:
                     audio_file.seek(0)
                     st.session_state["last_audio_bytes"] = audio_file.read()
                 except Exception:
                     pass
-                st.rerun()
 
         # ---------------------------------------------------------------------
         # AUDIO WAVEFORM & SPECTROGRAM GRAPHS UNDER ANALYZE BUTTON

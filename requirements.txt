@@ -2,7 +2,7 @@ numpy
 scipy
 librosa
 soundfile
-scikit-learn
+scikit-learn==1.9.0
 joblib
 streamlit
 matplotlib

@@ -104,6 +104,19 @@ st.markdown("""
         margin-top: 4px;
     }
 
+    [data-testid="stMetric"] {
+        overflow: visible !important;
+    }
+    [data-testid="stMetricValue"],
+    [data-testid="stMetricValue"] > div {
+        font-size: 1.35rem !important;
+        line-height: 1.2 !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        overflow-wrap: anywhere !important;
+    }
+
     /* Badges */
     .risk-badge {
         display: inline-block;

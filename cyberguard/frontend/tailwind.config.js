@@ -7,12 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        darkBg: "#0D1016",
-        cardBg: "#141820",
-        cardBorder: "#30343B",
-        accentBlue: "#3B9EFF",
+        darkBg: "#0B081A",
+        cardBg: "#11152F",
+        cardBorder: "#292852",
+        accentBlue: "#A855F7",
         primaryText: "#F5F5F5",
-        secondaryText: "#A1A1AA",
+        secondaryText: "#9B9AB8",
       }
     },
   },

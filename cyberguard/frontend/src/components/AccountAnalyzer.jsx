@@ -77,7 +77,7 @@ export default function AccountAnalyzer({ onEventGenerated }) {
           <button
             type="submit"
             disabled={loading || !log.trim()}
-            className="w-full sm:w-auto px-6 py-2.5 bg-accentBlue hover:bg-blue-600 disabled:opacity-50 text-white font-medium text-sm rounded-lg transition-colors flex items-center justify-center space-x-2"
+            className="w-full sm:w-auto px-6 py-2.5 bg-accentBlue hover:bg-violet-700 disabled:opacity-50 text-white font-medium text-sm rounded-lg transition-colors flex items-center justify-center space-x-2"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
             <span>{loading ? 'Analyzing Log Entries...' : 'Analyze Authentication Log'}</span>

@@ -41,14 +41,44 @@ from cyberguard.backend.services.account_service import analyze_account_log
 from cyberguard.backend.services.explanation_service import generate_explanation
 from cyberguard.backend.services.webhook_service import send_threat_alert
 
+TRANSCRIPTION_PROFILES = {
+    "Hyper - Medium": {
+        "model": "medium",
+        "accuracy": "Highest accuracy",
+        "duration": "~30-60 sec per 1 min audio",
+        "description": "Best for accents and noisy recordings; requires the most memory.",
+    },
+    "Base - Small": {
+        "model": "small",
+        "accuracy": "High accuracy",
+        "duration": "~15-35 sec per 1 min audio",
+        "description": "Recommended balance of transcript quality and speed.",
+    },
+    "Base - Base": {
+        "model": "base",
+        "accuracy": "Balanced accuracy",
+        "duration": "~8-20 sec per 1 min audio",
+        "description": "Good everyday transcription with lower memory requirements.",
+    },
+    "Low - Tiny": {
+        "model": "tiny",
+        "accuracy": "Fastest, lower accuracy",
+        "duration": "~5-15 sec per 1 min audio",
+        "description": "Best for quick screening and lower-powered machines.",
+    },
+}
+
 
 @st.cache_data(show_spinner=False)
-def analyze_uploaded_voice(filename, audio_bytes):
+def analyze_uploaded_voice(filename, audio_bytes, model_name="base", language="auto"):
     """Cache voice analysis by uploaded audio so results survive reruns."""
+    import inspect
     from fastapi import UploadFile
     from cyberguard.backend.services.voice_service import analyze_voice_file
 
     upload = UploadFile(filename=filename, file=io.BytesIO(audio_bytes))
+    if "model_name" in inspect.signature(analyze_voice_file).parameters:
+        return analyze_voice_file(upload, model_name=model_name, language=language)
     return analyze_voice_file(upload)
 
 # Page Configuration
@@ -68,21 +98,23 @@ st.markdown("""
 
     html, body, [class*="css"], .stApp {
         font-family: "Inter", sans-serif !important;
-        background-color: #0B0E14 !important;
+        background-color: #0B081A !important;
+        background-image: linear-gradient(115deg, #080716 0%, #0B081A 48%, #241142 100%) !important;
+        background-attachment: fixed !important;
         color: #F5F5F5 !important;
     }
 
     /* Cards */
     .card-panel {
-        background-color: #141820;
-        border: 1px solid #232730;
+        background-color: #11152F;
+        border: 1px solid #292852;
         border-radius: 14px;
         padding: 24px;
         margin-bottom: 20px;
     }
     .metric-panel {
-        background-color: #141820;
-        border: 1px solid #232730;
+        background-color: #11152F;
+        border: 1px solid #292852;
         border-radius: 12px;
         padding: 18px 20px;
         display: flex;
@@ -92,7 +124,7 @@ st.markdown("""
     .metric-title {
         font-size: 11px;
         font-weight: 600;
-        color: #A1A1AA;
+        color: #9B9AB8;
         text-transform: uppercase;
         letter-spacing: 0.8px;
     }
@@ -112,8 +144,8 @@ st.markdown("""
     }
     .acoustic-card {
         min-height: 86px;
-        background: #0B0E14;
-        border: 1px solid #232730;
+        background: #0B081A;
+        border: 1px solid #292852;
         border-left: 5px solid var(--feature-color);
         border-radius: 14px;
         padding: 18px 22px;
@@ -182,8 +214,8 @@ st.markdown("""
 
     /* Evidence & Guidance Rows */
     .evidence-item {
-        background: #0B0E14;
-        border: 1px solid #232730;
+        background: #0B081A;
+        border: 1px solid #292852;
         padding: 10px 16px;
         border-radius: 8px;
         margin-bottom: 6px;
@@ -204,15 +236,15 @@ st.markdown("""
     .rec-dot {
         width: 6px;
         height: 6px;
-        background-color: #3B9EFF;
+        background-color: #A855F7;
         border-radius: 50%;
         flex-shrink: 0;
     }
 
     /* AI Explanation Box */
     .ai-box {
-        background-color: #0B0E14;
-        border: 1px solid rgba(59, 158, 255, 0.3);
+        background-color: #0B081A;
+        border: 1px solid rgba(168, 85, 247, 0.35);
         border-radius: 12px;
         padding: 16px;
         margin-top: 16px;
@@ -221,7 +253,7 @@ st.markdown("""
     /* Tabs Styling */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
-        border-bottom: 1px solid #232730;
+        border-bottom: 1px solid #292852;
     }
     .stTabs [data-baseweb="tab"] {
         height: 48px;
@@ -233,24 +265,24 @@ st.markdown("""
         border-radius: 8px 8px 0 0;
     }
     .stTabs [aria-selected="true"] {
-        color: #3B9EFF !important;
+        color: #A855F7 !important;
         font-weight: 700 !important;
-        border-bottom: 2px solid #3B9EFF !important;
-        background-color: rgba(59, 158, 255, 0.05) !important;
+        border-bottom: 2px solid #A855F7 !important;
+        background-color: rgba(168, 85, 247, 0.08) !important;
     }
 
     /* Inputs and Buttons */
     .stTextInput input, .stTextArea textarea {
-        background-color: #0B0E14 !important;
-        border: 1px solid #232730 !important;
+        background-color: #0B081A !important;
+        border: 1px solid #292852 !important;
         color: #FFFFFF !important;
         border-radius: 10px !important;
     }
     .stTextInput input:focus, .stTextArea textarea:focus {
-        border-color: #3B9EFF !important;
+        border-color: #A855F7 !important;
     }
     .stButton button {
-        background-color: #3B9EFF !important;
+        background-color: #A855F7 !important;
         color: #FFFFFF !important;
         border: none !important;
         border-radius: 8px !important;
@@ -258,7 +290,7 @@ st.markdown("""
         padding: 8px 18px !important;
     }
     .stButton button:hover {
-        background-color: #2563EB !important;
+        background-color: #7C3AED !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -288,10 +320,10 @@ header_col1, header_col2 = st.columns([3, 1])
 with header_col1:
     st.markdown("""
     <div style="display:flex; align-items:center; gap:16px;">
-        <div style="padding:10px; background:rgba(59,158,255,0.1); border:1px solid rgba(59,158,255,0.2); border-radius:12px; font-size:24px;">🛡️</div>
+        <div style="padding:10px; background:rgba(168,85,247,0.1); border:1px solid rgba(168,85,247,0.2); border-radius:12px; font-size:24px;">🛡️</div>
         <div>
             <div style="font-size:22px; font-weight:800; color:#FFFFFF; display:flex; align-items:center; gap:8px;">
-                CYBERGUARD <span style="font-size:11px; font-family:'JetBrains Mono', monospace; background:rgba(59,158,255,0.1); color:#3B9EFF; border:1px solid rgba(59,158,255,0.2); padding:2px 6px; border-radius:4px;">v1.0</span>
+                CYBERGUARD <span style="font-size:11px; font-family:'JetBrains Mono', monospace; background:rgba(168,85,247,0.1); color:#A855F7; border:1px solid rgba(168,85,247,0.2); padding:2px 6px; border-radius:4px;">v1.0</span>
             </div>
             <div style="font-size:12px; color:#A1A1AA; margin-top:2px;">Real-Time Autonomous Threat Detection Engine</div>
         </div>
@@ -301,7 +333,7 @@ with header_col1:
 with header_col2:
     st.markdown("""
     <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-top:6px;">
-        <div style="font-size:11px; font-family:'JetBrains Mono', monospace; background:#0B0E14; border:1px solid #232730; padding:6px 12px; border-radius:8px; display:flex; align-items:center; gap:6px;">
+        <div style="font-size:11px; font-family:'JetBrains Mono', monospace; background:#0B081A; border:1px solid #292852; padding:6px 12px; border-radius:8px; display:flex; align-items:center; gap:6px;">
             <span style="color:#A1A1AA;">Backend API:</span>
             <span style="color:#34D399; font-weight:700;">● ONLINE</span>
         </div>
@@ -575,6 +607,27 @@ with tabs[4]:
         </div>
     </div>
     """, unsafe_allow_html=True)
+    profile_col, language_col = st.columns([1, 1])
+    with profile_col:
+        selected_profile = st.selectbox(
+            "Transcription profile",
+            list(TRANSCRIPTION_PROFILES),
+            index=1,
+            key="voice_transcription_profile",
+            help="Hyper maximizes accuracy, Base balances quality and speed, and Low prioritizes fast results.",
+        )
+    with language_col:
+        selected_language = st.selectbox(
+            "Speech language",
+            [("Auto detect", "auto"), ("English", "en"), ("Hindi", "hi"), ("Spanish", "es"), ("French", "fr"), ("German", "de")],
+            format_func=lambda option: option[0],
+            key="voice_transcription_language",
+        )[1]
+    selected_profile_details = TRANSCRIPTION_PROFILES[selected_profile]
+    st.caption(
+        f"{selected_profile_details['accuracy']} | {selected_profile_details['duration']} | "
+        f"{selected_profile_details['description']}"
+    )
     input_col, reset_col = st.columns([5, 1])
     with input_col:
         audio_file = st.file_uploader(
@@ -592,13 +645,18 @@ with tabs[4]:
         st.audio(selected_audio)
         audio_bytes = selected_audio.getvalue()
         audio_name = selected_audio.name or "recorded_voice.wav"
-        audio_key = hashlib.sha256(audio_bytes).hexdigest()
+        analysis_key = f"{hashlib.sha256(audio_bytes).hexdigest()}:{selected_profile_details['model']}:{selected_language}"
         if st.button("Analyze Voice Recording", type="primary"):
             with st.spinner("Analyzing Audio Recording..."):
-                res = analyze_uploaded_voice(audio_name, audio_bytes)
+                res = analyze_uploaded_voice(
+                    audio_name,
+                    audio_bytes,
+                    model_name=selected_profile_details["model"],
+                    language=selected_language,
+                )
                 add_event_to_store(res)
                 st.session_state["last_voice_result"] = dict(res)
-                st.session_state["last_voice_file_key"] = audio_key
+                st.session_state["last_voice_file_key"] = analysis_key
                 if "transcription unavailable:" in res.get("source", ""):
                     st.warning("Voice classification completed, but transcription is unavailable in this deployment.")
                 st.success("Voice analysis complete")
@@ -614,12 +672,17 @@ with tabs[4]:
                     pass
 
         # Restore the cached result after any Streamlit rerun or app refresh.
-        if st.session_state.get("last_voice_file_key") != audio_key:
+        if st.session_state.get("last_voice_file_key") != analysis_key:
             with st.spinner("Preparing voice analysis results..."):
-                res = analyze_uploaded_voice(audio_name, audio_bytes)
+                res = analyze_uploaded_voice(
+                    audio_name,
+                    audio_bytes,
+                    model_name=selected_profile_details["model"],
+                    language=selected_language,
+                )
             add_event_to_store(res)
             st.session_state["last_voice_result"] = dict(res)
-            st.session_state["last_voice_file_key"] = audio_key
+            st.session_state["last_voice_file_key"] = analysis_key
             st.rerun()
 
         # ---------------------------------------------------------------------
@@ -740,7 +803,11 @@ with tabs[4]:
         p_col1, p_col2 = st.columns([1.2, 1])
         with p_col1:
             st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Speech Authenticity Breakdown (AI vs. Human)</h5>", unsafe_allow_html=True)
-            ai_prob = res.get("voice_confidence", 50)
+            ai_prob = next(
+                (item.get("value", 50) for item in res.get("evidence", []) if item.get("name") == "AI probability"),
+                50,
+            )
+            ai_prob = max(0, min(100, float(ai_prob)))
             human_prob = max(0, 100 - ai_prob)
             if HAS_PLOTLY:
                 fig_donut = px.pie(
@@ -753,7 +820,7 @@ with tabs[4]:
         with p_col2:
             if res.get("transcript"):
                 st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Audio Transcript</h5>", unsafe_allow_html=True)
-                st.markdown(f'<div style="background:#0B0E14; border:1px solid #232730; padding:16px; border-radius:10px; font-style:italic; font-family:\'JetBrains Mono\', monospace; color:#E2E8F0; font-size:12px; line-height:1.6;">"{res["transcript"]}"</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="background:#0B081A; border:1px solid #292852; padding:16px; border-radius:10px; font-style:italic; font-family:\'JetBrains Mono\', monospace; color:#E2E8F0; font-size:12px; line-height:1.6;">"{res["transcript"]}"</div>', unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Acoustic Evidence</h5>", unsafe_allow_html=True)
             for item in res.get("evidence", []):

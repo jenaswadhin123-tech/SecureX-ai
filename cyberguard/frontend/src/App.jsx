@@ -53,7 +53,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-darkBg text-primaryText flex flex-col font-sans">
+    <div className="app-shell min-h-screen text-primaryText flex flex-col font-sans">
       <Header onRefresh={loadData} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">

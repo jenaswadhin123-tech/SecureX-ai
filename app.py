@@ -25,6 +25,33 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_MODEL_PATH = PROJECT_ROOT / "model.joblib"
 TEMP_MODEL_PATH = Path(tempfile.gettempdir()) / "model.joblib"
 
+TRANSCRIPTION_PROFILES = {
+    "Hyper - Medium": {
+        "model": "medium",
+        "accuracy": "Highest accuracy",
+        "duration": "~30-60 sec per 1 min audio",
+        "description": "Best for accents, noisy recordings, and maximum transcript quality. Requires the most memory.",
+    },
+    "Base - Small": {
+        "model": "small",
+        "accuracy": "High accuracy",
+        "duration": "~15-35 sec per 1 min audio",
+        "description": "Recommended quality and speed balance for most voice recordings.",
+    },
+    "Base - Base": {
+        "model": "base",
+        "accuracy": "Balanced accuracy",
+        "duration": "~8-20 sec per 1 min audio",
+        "description": "Good everyday transcription with lower memory and processing requirements.",
+    },
+    "Low - Tiny": {
+        "model": "tiny",
+        "accuracy": "Fastest, lower accuracy",
+        "duration": "~5-15 sec per 1 min audio",
+        "description": "Use for quick screening, previews, or lower-powered machines.",
+    },
+}
+
 
 def get_model_path() -> Path:
     if TEMP_MODEL_PATH.exists():
@@ -438,12 +465,31 @@ with st.sidebar:
 
     st.caption(f"Dataset: {human_count} Human clips | {ai_count} AI clips")
 
-    whisper_model = st.selectbox(
-        "Speech-to-text model",
-        ["tiny", "base", "small", "medium"],
-        index=2,
-        help="Small is the recommended balance. Medium is more accurate for accents but needs much more memory and time.",
+    selected_profile = st.selectbox(
+        "Transcription profile",
+        list(TRANSCRIPTION_PROFILES),
+        index=1,
+        help="Choose a profile based on the accuracy and processing time you need.",
     )
+    profile = TRANSCRIPTION_PROFILES[selected_profile]
+    whisper_model = profile["model"]
+    st.markdown(
+        f"""
+        <div style="background:#171B38; border:1px solid #292E54; border-radius:10px; padding:10px 12px; margin: -4px 0 12px 0;">
+            <div style="color:#B184FF; font-size:11px; font-weight:700; text-transform:uppercase;">{profile['accuracy']}</div>
+            <div style="color:#F7F7FF; font-size:12px; margin-top:3px;">{profile['duration']}</div>
+            <div style="color:#9295B5; font-size:11px; margin-top:5px; line-height:1.4;">{profile['description']}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    with st.expander("Compare all transcription models"):
+        st.markdown(
+            "\n".join(
+                f"- **{name}** (`{details['model']}`): {details['accuracy']} - {details['duration']}"
+                for name, details in TRANSCRIPTION_PROFILES.items()
+            )
+        )
     whisper_language = st.selectbox(
         "Speech language",
         [

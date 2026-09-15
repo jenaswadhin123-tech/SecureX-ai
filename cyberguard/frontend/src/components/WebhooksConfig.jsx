@@ -57,7 +57,7 @@ export default function WebhooksConfig() {
           <button
             type="submit"
             disabled={loading || !webhookUrl.trim()}
-            className="px-6 py-2.5 bg-accentBlue hover:bg-blue-600 disabled:opacity-50 text-white font-medium text-xs rounded-lg transition-colors flex items-center space-x-2"
+            className="px-6 py-2.5 bg-accentBlue hover:bg-violet-700 disabled:opacity-50 text-white font-medium text-xs rounded-lg transition-colors flex items-center space-x-2"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             <span>{loading ? 'Sending Test Alert...' : 'Dispatch Test Alert'}</span>

@@ -30,11 +30,11 @@ EXISTING_SRC = PROJECT_ROOT.parent / "src" if (PROJECT_ROOT.parent / "src").exis
 if str(EXISTING_SRC) not in sys.path:
     sys.path.append(str(EXISTING_SRC))
 
-# Import original modules (unchanged)
-# pylint: disable=import-error
-from inference import analyze_audio  # type: ignore
-from scam_analyzer import analyze_scam_intent  # type: ignore
-from transcription import transcribe_audio  # type: ignore
+# Import the canonical project modules. Using the package-qualified path avoids
+# accidentally loading the legacy cyberguard/src placeholder implementation.
+from src.inference import analyze_audio
+from src.scam_analyzer import analyze_scam_intent
+from src.transcription import transcribe_audio
 
 # CYBERGUARD shared utilities
 from ..risk_engine import compute_overall_risk
@@ -82,7 +82,11 @@ def _store_upload(upload: UploadFile) -> Path:
 # ---------------------------------------------------------------------------
 # Public API used by the FastAPI router
 # ---------------------------------------------------------------------------
-def analyze_voice_file(upload: UploadFile) -> Dict[str, Any]:
+def analyze_voice_file(
+    upload: UploadFile,
+    model_name: str = "base",
+    language: str = "auto",
+) -> Dict[str, Any]:
     """Run the voice‑analysis pipeline and return a ``ThreatEvent`` dict.
     The returned dictionary can be directly serialised by FastAPI.
     """
@@ -99,7 +103,7 @@ def analyze_voice_file(upload: UploadFile) -> Dict[str, Any]:
     # the hosted environment cannot download or load the optional Whisper model.
     transcription_error = None
     try:
-        transcript = transcribe_audio(audio_path)
+        transcript = transcribe_audio(audio_path, model_name=model_name, language=language)
     except RuntimeError as exc:
         transcript = ""
         transcription_error = str(exc)

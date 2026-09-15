@@ -658,9 +658,9 @@ with tabs[4]:
         selected_profile = st.selectbox(
             "Transcription profile",
             list(TRANSCRIPTION_PROFILES),
-            index=1,
+            index=3,
             key="voice_transcription_profile",
-            help="Hyper maximizes accuracy, Base balances quality and speed, and Low prioritizes fast results.",
+            help="Low is recommended for Streamlit Cloud. Hyper and Base models need substantially more memory and download time.",
         )
     with language_col:
         selected_language = st.selectbox(
@@ -674,6 +674,8 @@ with tabs[4]:
         f"{selected_profile_details['accuracy']} | {selected_profile_details['duration']} | "
         f"{selected_profile_details['description']}"
     )
+    if selected_profile != "Low - Tiny":
+        st.info("Larger Whisper models can exceed Streamlit Cloud memory limits. Use Low - Tiny for the most reliable deployment performance.")
     input_col, reset_col = st.columns([5, 1])
     with input_col:
         audio_file = st.file_uploader(

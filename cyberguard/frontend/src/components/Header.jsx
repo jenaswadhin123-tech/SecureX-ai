@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Shield, Activity, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Globe2, ShieldCheck, Activity, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 import { checkHealth } from '../services/api';
 
 export default function Header({ onRefresh }) {
@@ -19,8 +19,9 @@ export default function Header({ onRefresh }) {
   return (
     <header className="bg-cardBg border-b border-cardBorder px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
       <div className="flex items-center space-x-3">
-        <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-accentBlue">
-          <Shield className="w-7 h-7" />
+        <div className="relative p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-accentBlue">
+          <Globe2 className="w-8 h-8" strokeWidth={1.7} />
+          <ShieldCheck className="absolute -right-1 -bottom-1 w-4 h-4 rounded-full bg-accentBlue text-white" strokeWidth={2.5} />
         </div>
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">

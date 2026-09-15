@@ -292,6 +292,53 @@ st.markdown("""
     .stButton button:hover {
         background-color: #7C3AED !important;
     }
+
+    .cyber-earth-logo {
+        position: relative;
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #C084FC;
+        border: 2px solid #A855F7;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #5B21B6, #17133B 72%);
+        box-shadow: 0 0 18px rgba(168, 85, 247, 0.32);
+        overflow: hidden;
+    }
+    .cyber-earth-logo::before,
+    .cyber-earth-logo::after {
+        content: "";
+        position: absolute;
+        border: 1px solid rgba(216, 180, 254, 0.72);
+        border-radius: 50%;
+    }
+    .cyber-earth-logo::before {
+        width: 19px;
+        height: 40px;
+    }
+    .cyber-earth-logo::after {
+        width: 38px;
+        height: 14px;
+    }
+    .cyber-earth-shield {
+        position: absolute;
+        right: -3px;
+        bottom: -3px;
+        z-index: 2;
+        width: 23px;
+        height: 26px;
+        color: #FFFFFF;
+        background: #A855F7;
+        border: 2px solid #E9D5FF;
+        clip-path: polygon(50% 0, 92% 15%, 86% 63%, 50% 100%, 14% 63%, 8% 15%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 800;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -320,7 +367,7 @@ header_col1, header_col2 = st.columns([3, 1])
 with header_col1:
     st.markdown("""
     <div style="display:flex; align-items:center; gap:16px;">
-        <div style="padding:10px; background:rgba(168,85,247,0.1); border:1px solid rgba(168,85,247,0.2); border-radius:12px; font-size:24px;">🛡️</div>
+        <div class="cyber-earth-logo"><span class="cyber-earth-shield">✓</span></div>
         <div>
             <div style="font-size:22px; font-weight:800; color:#FFFFFF; display:flex; align-items:center; gap:8px;">
                 CYBERGUARD <span style="font-size:11px; font-family:'JetBrains Mono', monospace; background:rgba(168,85,247,0.1); color:#A855F7; border:1px solid rgba(168,85,247,0.2); padding:2px 6px; border-radius:4px;">v1.0</span>

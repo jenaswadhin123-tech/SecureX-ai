@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
-import { Mic, UploadCloud, ShieldCheck, Sparkles, Loader2, X, FileAudio } from "lucide-react";
-import { analyzeVoice, explainThreat } from "../services/api";
+import { Mic, UploadCloud, ShieldCheck, Loader2, X, FileAudio } from "lucide-react";
+import { analyzeVoice } from "../services/api";
 
 const ACCEPTED_EXTS = /\.(wav|mp3|ogg|m4a|webm|flac)$/i;
 const MAX_SIZE_MB = 25;
@@ -11,8 +11,6 @@ export default function VoiceAnalyzer({ onEventGenerated }) {
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const [explanation, setExplanation] = useState("");
-  const [explainLoading, setExplainLoading] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
 
@@ -28,7 +26,6 @@ export default function VoiceAnalyzer({ onEventGenerated }) {
     }
     setError("");
     setResult(null);
-    setExplanation("");
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     setAudioFile(file);
     setAudioUrl(URL.createObjectURL(file));
@@ -45,7 +42,6 @@ export default function VoiceAnalyzer({ onEventGenerated }) {
     setLoading(true);
     setError("");
     setResult(null);
-    setExplanation("");
     try {
       const res = await analyzeVoice(audioFile);
       setResult(res);
@@ -57,25 +53,11 @@ export default function VoiceAnalyzer({ onEventGenerated }) {
     }
   };
 
-  const handleExplain = async () => {
-    if (!result) return;
-    setExplainLoading(true);
-    try {
-      const res = await explainThreat(result);
-      setExplanation(res.explanation || "No explanation available.");
-    } catch {
-      setExplanation("Failed to generate AI explanation.");
-    } finally {
-      setExplainLoading(false);
-    }
-  };
-
   const clearFile = () => {
     setAudioFile(null);
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     setAudioUrl(null);
     setResult(null);
-    setExplanation("");
     setError("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -173,10 +155,6 @@ export default function VoiceAnalyzer({ onEventGenerated }) {
                 </span>
               </h4>
             </div>
-            <button onClick={handleExplain} disabled={explainLoading} className="px-4 py-2 bg-darkBg border border-cardBorder hover:border-accentBlue hover:text-accentBlue text-xs font-medium text-primaryText rounded-lg transition-all flex items-center space-x-1.5">
-              {explainLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
-              <span>{explainLoading ? "Generating..." : "Explain Voice Risk"}</span>
-            </button>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -252,15 +230,6 @@ export default function VoiceAnalyzer({ onEventGenerated }) {
             </div>
           )}
 
-          {explanation && (
-            <div className="p-4 bg-darkBg border border-accentBlue/30 rounded-xl space-y-2">
-              <div className="flex items-center space-x-2 text-accentBlue text-xs font-bold">
-                <Sparkles className="w-4 h-4 text-amber-400" />
-                <span>AI Threat Assessment</span>
-              </div>
-              <p className="text-xs text-secondaryText leading-relaxed">{explanation}</p>
-            </div>
-          )}
         </div>
       )}
     </div>

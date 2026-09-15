@@ -639,7 +639,6 @@ with tabs[4]:
             "voice_recording",
             "last_voice_result",
             "last_voice_file_key",
-            "last_voice_expl",
             "last_audio_bytes",
         ):
             st.session_state.pop(state_key, None)
@@ -795,13 +794,7 @@ with tabs[4]:
     if "last_voice_result" in st.session_state:
         res = st.session_state["last_voice_result"]
         st.markdown('<div class="card-panel">', unsafe_allow_html=True)
-        v_col1, v_col2 = st.columns([3, 1])
-        with v_col1:
-            st.markdown(f'<div style="font-size:11px; font-family:\'JetBrains Mono\', monospace; color:#A1A1AA; text-transform:uppercase;">Voice Threat Verdict</div><div style="font-size:20px; font-weight:700; color:#FFFFFF; margin-top:4px;">Risk Level: {get_badge_html(res["risk_level"], res["risk_score"])}</div>', unsafe_allow_html=True)
-        with v_col2:
-            if st.button("✨ Explain Voice Risk", key="explain_voice"):
-                with st.spinner("Generating AI Analysis..."):
-                    st.session_state["last_voice_expl"] = generate_explanation(res)
+        st.markdown(f'<div style="font-size:11px; font-family:\'JetBrains Mono\', monospace; color:#A1A1AA; text-transform:uppercase;">Voice Threat Verdict</div><div style="font-size:20px; font-weight:700; color:#FFFFFF; margin-top:4px;">Risk Level: {get_badge_html(res["risk_level"], res["risk_score"])}</div>', unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
         st.subheader("Voice analysis results")
         result_cols = st.columns(4)
@@ -872,8 +865,6 @@ with tabs[4]:
             st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Acoustic Evidence</h5>", unsafe_allow_html=True)
             for item in res.get("evidence", []):
                 st.markdown(f'<div class="evidence-item"><span style="color:#FB7185; font-weight:700;">{item["name"]}</span><span style="color:#A1A1AA;">Weight: +{item["value"]}</span></div>', unsafe_allow_html=True)
-        if "last_voice_expl" in st.session_state:
-            st.markdown(f'<div class="ai-box"><div style="color:#3B9EFF; font-weight:700; font-size:12px; margin-bottom:4px;">✨ AI Threat Assessment</div><div style="color:#CBD5E1; font-size:12px; line-height:1.6;">{st.session_state["last_voice_expl"]}</div></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
 # TAB 6: EVENT INSPECTOR

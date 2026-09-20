@@ -101,6 +101,7 @@ st.markdown("""
         background-color: #151332 !important;
         background-image: linear-gradient(115deg, #11102A 0%, #191641 48%, #302052 100%) !important;
         background-size: 140% 140% !important;
+        animation: cyberguard-background-drift 22s ease-in-out infinite alternate;
         background-attachment: fixed !important;
         color: #F5F5F5 !important;
     }
@@ -151,7 +152,7 @@ st.markdown("""
             linear-gradient(rgba(93, 225, 255, 0.055) 1px, transparent 1px),
             linear-gradient(90deg, rgba(168, 85, 247, 0.05) 1px, transparent 1px);
         background-size: 220px 220px, 260px 260px, 300px 300px, 340px 340px, 280px 280px, 180px 180px, 220px 220px, 72px 72px, 72px 72px;
-        animation: cyberguard-network-breathe 8s ease-in-out infinite alternate;
+        animation: cyberguard-neural-flow 24s linear infinite, cyberguard-network-breathe 8s ease-in-out infinite alternate;
         will-change: transform, opacity;
         transform: translate3d(0, 0, 0);
         backface-visibility: hidden;
@@ -180,14 +181,19 @@ st.markdown("""
         100% { background-position: 76px 48px, -56px 68px, 92px -40px, -70px -60px, 48px 84px, 48px -36px, -60px 52px, 72px 72px, -72px -72px; }
     }
 
+    @keyframes cyberguard-background-drift {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 100% 50%; }
+    }
+
     @keyframes cyberguard-scan-pulse {
-        0%, 100% { opacity: 0.30; transform: translate3d(-2%, -1%, 0) scale(0.98); }
-        50% { opacity: 0.72; transform: translate3d(2%, 1%, 0) scale(1.02); }
+        0%, 100% { opacity: 0.30; background-position: center, -70% 0, 0 -100%; transform: translate3d(-2%, -1%, 0) scale(0.98); }
+        50% { opacity: 0.72; background-position: center, 70% 0, 0 100%; transform: translate3d(2%, 1%, 0) scale(1.02); }
     }
 
     @keyframes cyberguard-network-breathe {
-        0% { opacity: 0.18; transform: translate3d(-0.5%, 0, 0); }
-        100% { opacity: 0.30; transform: translate3d(0.5%, 0.3%, 0); }
+        0% { opacity: 0.18; filter: brightness(0.9); transform: translate3d(-0.5%, 0, 0); }
+        100% { opacity: 0.30; filter: brightness(1.18); transform: translate3d(0.5%, 0.3%, 0); }
     }
 
     @media (prefers-reduced-motion: reduce) {

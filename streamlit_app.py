@@ -115,6 +115,24 @@ st.markdown("""
         background: transparent !important;
     }
 
+    [data-testid="stCameraInput"] {
+        width: 100% !important;
+        min-height: 420px;
+        padding: 10px !important;
+        border: 1px solid rgba(93, 225, 255, 0.38) !important;
+        border-radius: 14px !important;
+        background: rgba(8, 12, 32, 0.78) !important;
+        box-shadow: inset 0 0 28px rgba(93, 225, 255, 0.08), 0 0 22px rgba(124, 58, 237, 0.1);
+    }
+    [data-testid="stCameraInput"] video,
+    [data-testid="stCameraInput"] img {
+        width: 100% !important;
+        max-height: 62vh !important;
+        min-height: 340px;
+        object-fit: contain !important;
+        border-radius: 10px;
+    }
+
     .stApp::before {
         content: "";
         position: fixed;
@@ -817,7 +835,7 @@ if selected_navigation == navigation_items[2]:
     )
     if qr_input_mode == "Use camera":
         qr_image = st.camera_input(
-            "Point your camera at a QR code and capture it",
+            "Capture a QR code",
             key="qr_camera_capture",
         )
         qr_filename = "camera_qr_capture.png"
@@ -829,9 +847,27 @@ if selected_navigation == navigation_items[2]:
         )
         qr_filename = qr_image.name if qr_image is not None else "uploaded_qr_image"
 
+    camera_capture_hash = None
     if qr_image is not None:
-        st.caption("Image captured. Scan it to decode the destination and check its reputation.")
-    if qr_image is not None and st.button("Scan QR Code", type="primary"):
+        camera_capture_hash = hashlib.sha256(qr_image.getvalue()).hexdigest()
+        if qr_input_mode == "Use camera":
+            st.caption("Capture received. Searching the image for a QR code automatically...")
+        else:
+            st.caption("Image ready. Scan it to decode the destination and check its reputation.")
+
+    should_scan_qr = qr_image is not None and (
+        qr_input_mode == "Use camera"
+        or st.button("Scan QR Code", type="primary")
+    )
+    is_new_camera_capture = (
+        qr_input_mode == "Use camera"
+        and camera_capture_hash
+        != st.session_state.get("last_qr_capture_hash")
+    )
+    if is_new_camera_capture:
+        st.session_state["last_qr_capture_hash"] = camera_capture_hash
+
+    if should_scan_qr and (qr_input_mode != "Use camera" or is_new_camera_capture):
         with st.spinner("Decoding and analyzing QR destination..."):
             try:
                 qr_result = analyze_qr_image(qr_image.getvalue(), qr_filename)

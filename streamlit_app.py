@@ -525,6 +525,57 @@ st.markdown("""
         accent-color: #5DE1FF;
     }
 
+    /* Streamlit renders radio choices inside a role=radiogroup wrapper. */
+    [data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] {
+        gap: 7px !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label {
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        min-height: 44px !important;
+        box-sizing: border-box !important;
+        padding: 0 12px 0 18px !important;
+        border: 1px solid rgba(76, 94, 150, 0.42) !important;
+        border-radius: 9px !important;
+        background: linear-gradient(90deg, rgba(16, 22, 52, 0.92), rgba(10, 14, 34, 0.74)) !important;
+        color: #C4CAE0 !important;
+        overflow: hidden !important;
+        transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 160ms ease !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 7px;
+        bottom: 7px;
+        width: 3px;
+        border-radius: 0 4px 4px 0;
+        background: #34405F;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label:hover {
+        color: #FFFFFF !important;
+        border-color: rgba(93, 225, 255, 0.7) !important;
+        background: rgba(20, 29, 63, 0.96) !important;
+        transform: translateX(2px);
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label:has(input:checked) {
+        color: #FFFFFF !important;
+        border-color: rgba(168, 85, 247, 0.82) !important;
+        background: linear-gradient(90deg, rgba(111, 52, 194, 0.42), rgba(22, 29, 67, 0.96)) !important;
+        box-shadow: inset 0 0 22px rgba(124, 58, 237, 0.16), 0 0 18px rgba(124, 58, 237, 0.14) !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label:has(input:checked)::before {
+        background: #5DE1FF;
+        box-shadow: 0 0 10px #5DE1FF, 0 0 18px rgba(93, 225, 255, 0.7);
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label p {
+        color: inherit !important;
+        margin: 0 !important;
+        font-weight: 600 !important;
+    }
+
     /* Inputs and Buttons */
     .stTextInput input, .stTextArea textarea {
         background-color: #0B081A !important;

@@ -39,11 +39,37 @@ def decode_qr_url(image_bytes: bytes) -> str:
     if image is None:
         raise ValueError("The uploaded file is not a readable image.")
 
-    decoded_value, _, _ = cv2.QRCodeDetector().detectAndDecode(image)
-    decoded_value = (decoded_value or "").strip()
-    if not decoded_value:
-        raise ValueError("No readable QR code was found in the image.")
-    return _validate_url(decoded_value)
+    detector = cv2.QRCodeDetector()
+    candidates = [image]
+    try:
+        height, width = image.shape[:2]
+        scale = 3 if min(height, width) < 900 else 2
+        enlarged = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+        gray = cv2.cvtColor(enlarged, cv2.COLOR_BGR2GRAY)
+        contrast = cv2.equalizeHist(gray)
+        thresholded = cv2.adaptiveThreshold(
+            contrast, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+        )
+        sharpened = cv2.addWeighted(contrast, 1.6, cv2.GaussianBlur(contrast, (0, 0), 2), -0.6, 0)
+        candidates.extend([enlarged, gray, contrast, thresholded, sharpened])
+    except (AttributeError, cv2.error, ValueError):
+        pass
+
+    for candidate in candidates:
+        decoded_value, _, _ = detector.detectAndDecode(candidate)
+        if decoded_value and decoded_value.strip():
+            return _validate_url(decoded_value.strip())
+
+        try:
+            found, decoded_values, _, _ = detector.detectAndDecodeMulti(candidate)
+        except (cv2.error, ValueError):
+            found, decoded_values = False, []
+        if found:
+            for decoded_value in decoded_values:
+                if decoded_value and decoded_value.strip():
+                    return _validate_url(decoded_value.strip())
+
+    raise ValueError("No readable QR code was found in the image. Move closer, reduce glare, and keep the QR code centered.")
 
 
 def _qr_specific_contributions(url: str) -> Dict[str, int]:

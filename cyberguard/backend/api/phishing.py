@@ -7,7 +7,8 @@ POST /api/analyze/phishing
 """
 
 from fastapi import APIRouter, HTTPException, status, Depends, BackgroundTasks
-from pydantic import BaseModel
+from typing import Any, Dict
+from pydantic import BaseModel, Field
 from ..middleware.auth import verify_api_key
 from ..services.webhook_service import send_threat_alert
 
@@ -18,13 +19,14 @@ router = APIRouter()
 
 class PhishingRequest(BaseModel):
     content: str
+    communication_context: Dict[str, Any] = Field(default_factory=dict)
 
 
 @router.post("/analyze/phishing", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_api_key)])
 async def analyze_phishing(request: PhishingRequest, background_tasks: BackgroundTasks):
     try:
         # Run analysis
-        result_dict = analyze_phishing_text(request.content)
+        result_dict = analyze_phishing_text(request.content, request.communication_context)
         # Persist the event
         from ..db.threat_event_repository import ThreatEventRepository
         from ..models import ThreatEvent

@@ -35,10 +35,10 @@ except ImportError:
     HAS_LIBROSA = False
 
 # Import CyberGuard Backend Services
-from cyberguard.backend.services.url_service import analyze_url
+from cyberguard.backend.services.url_service import _validate_url, analyze_url
+from cyberguard.backend.services.qr_service import analyze_qr_image
 from cyberguard.backend.services.phishing_service import analyze_phishing_text
 from cyberguard.backend.services.account_service import analyze_account_log
-from cyberguard.backend.services.explanation_service import generate_explanation
 from cyberguard.backend.services.webhook_service import send_threat_alert
 
 TRANSCRIPTION_PROFILES = {
@@ -86,7 +86,7 @@ st.set_page_config(
     page_title="CYBERGUARD — Autonomous Threat Detection Engine",
     page_icon="🛡️",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # -----------------------------------------------------------------------------
@@ -98,10 +98,85 @@ st.markdown("""
 
     html, body, [class*="css"], .stApp {
         font-family: "Inter", sans-serif !important;
-        background-color: #0B081A !important;
-        background-image: linear-gradient(115deg, #080716 0%, #0B081A 48%, #241142 100%) !important;
+        background-color: #151332 !important;
+        background-image: linear-gradient(115deg, #11102A 0%, #191641 48%, #302052 100%) !important;
+        background-size: 140% 140% !important;
         background-attachment: fixed !important;
         color: #F5F5F5 !important;
+    }
+
+    header[data-testid="stHeader"],
+    [data-testid="stToolbar"] {
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    [data-testid="stDecoration"] {
+        background: transparent !important;
+    }
+
+    .stApp::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.24;
+        background-image:
+            radial-gradient(circle at 8% 18%, rgba(93, 225, 255, 0.85) 0 2px, transparent 3px),
+            radial-gradient(circle at 24% 72%, rgba(192, 132, 252, 0.75) 0 2px, transparent 3px),
+            radial-gradient(circle at 48% 30%, rgba(93, 225, 255, 0.72) 0 2px, transparent 3px),
+            radial-gradient(circle at 72% 68%, rgba(192, 132, 252, 0.78) 0 2px, transparent 3px),
+            radial-gradient(circle at 92% 22%, rgba(93, 225, 255, 0.78) 0 2px, transparent 3px),
+            linear-gradient(28deg, transparent 0 47%, rgba(93, 225, 255, 0.12) 48%, transparent 49%),
+            linear-gradient(148deg, transparent 0 47%, rgba(192, 132, 252, 0.11) 48%, transparent 49%),
+            linear-gradient(rgba(93, 225, 255, 0.055) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(168, 85, 247, 0.05) 1px, transparent 1px);
+        background-size: 220px 220px, 260px 260px, 300px 300px, 340px 340px, 280px 280px, 180px 180px, 220px 220px, 72px 72px, 72px 72px;
+        animation: cyberguard-network-breathe 8s ease-in-out infinite alternate;
+        will-change: transform, opacity;
+        transform: translate3d(0, 0, 0);
+        backface-visibility: hidden;
+    }
+
+    .stApp::after {
+        content: "";
+        position: fixed;
+        inset: -35% -10%;
+        z-index: 0;
+        pointer-events: none;
+        background:
+            radial-gradient(ellipse at center, rgba(168, 85, 247, 0.18), transparent 48%),
+            linear-gradient(112deg, transparent 37%, rgba(93, 225, 255, 0.02) 45%, rgba(93, 225, 255, 0.16) 50%, rgba(93, 225, 255, 0.02) 55%, transparent 63%),
+            linear-gradient(180deg, transparent 0%, rgba(192, 132, 252, 0.06) 50%, transparent 100%);
+        background-size: 100% 100%, 240% 100%, 100% 240%;
+        animation: cyberguard-scan-pulse 11s ease-in-out infinite;
+        will-change: transform, opacity;
+        transform: translate3d(0, 0, 0);
+        backface-visibility: hidden;
+    }
+
+    @keyframes cyberguard-neural-flow {
+        0% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+        50% { background-position: 38px 24px, -28px 34px, 46px -20px, -35px -30px, 24px 42px, 24px -18px, -30px 26px, 36px 36px, -36px -36px; }
+        100% { background-position: 76px 48px, -56px 68px, 92px -40px, -70px -60px, 48px 84px, 48px -36px, -60px 52px, 72px 72px, -72px -72px; }
+    }
+
+    @keyframes cyberguard-scan-pulse {
+        0%, 100% { opacity: 0.30; transform: translate3d(-2%, -1%, 0) scale(0.98); }
+        50% { opacity: 0.72; transform: translate3d(2%, 1%, 0) scale(1.02); }
+    }
+
+    @keyframes cyberguard-network-breathe {
+        0% { opacity: 0.18; transform: translate3d(-0.5%, 0, 0); }
+        100% { opacity: 0.30; transform: translate3d(0.5%, 0.3%, 0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html, body, [class*="css"], .stApp,
+        .stApp::before, .stApp::after {
+            animation: none !important;
+        }
     }
 
     /* Cards */
@@ -271,6 +346,167 @@ st.markdown("""
         background-color: rgba(168, 85, 247, 0.08) !important;
     }
 
+    [data-testid="stSidebar"] {
+        background-color: #090B20 !important;
+        background-image:
+            linear-gradient(rgba(93, 225, 255, 0.035) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(93, 225, 255, 0.035) 1px, transparent 1px),
+            radial-gradient(circle at 15% 4%, rgba(124, 58, 237, 0.28), transparent 32%),
+            linear-gradient(180deg, #15143A 0%, #090B20 62%) !important;
+        background-size: 28px 28px, 28px 28px, auto, auto !important;
+        border-right: 1px solid rgba(93, 225, 255, 0.22) !important;
+        box-shadow: 12px 0 40px rgba(5, 7, 22, 0.32);
+    }
+    [data-testid="stSidebar"]::after {
+        content: "SECUREX // CONTROL PLANE";
+        position: fixed;
+        left: 15px;
+        bottom: 12px;
+        color: rgba(93, 225, 255, 0.32);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 1.5px;
+        pointer-events: none;
+    }
+    .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 13px 8px 18px 6px;
+        margin-bottom: 9px;
+        border-bottom: 1px solid rgba(93, 225, 255, 0.16);
+    }
+    .sidebar-brand-mark {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        height: 27px;
+        padding: 0 5px;
+        border-left: 1px solid #5DE1FF;
+        border-right: 1px solid rgba(168, 85, 247, 0.7);
+        transform: skew(-12deg);
+    }
+    .sidebar-brand-mark span {
+        display: block;
+        width: 3px;
+        background: #5DE1FF;
+        box-shadow: 0 0 7px rgba(93, 225, 255, 0.75);
+    }
+    .sidebar-brand-mark span:nth-child(1) { height: 10px; opacity: 0.65; }
+    .sidebar-brand-mark span:nth-child(2) { height: 22px; }
+    .sidebar-brand-mark span:nth-child(3) { height: 15px; background: #C084FC; }
+    .sidebar-brand-name {
+        color: #FFFFFF;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+    }
+    .sidebar-brand-name b {
+        color: #C084FC;
+        font-size: 8px;
+        letter-spacing: 1px;
+        vertical-align: top;
+        margin-left: 3px;
+    }
+    .sidebar-brand-sub {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 5px;
+        color: #7F8AA8;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 0.7px;
+    }
+    .sidebar-brand-sub i {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #34D399;
+        box-shadow: 0 0 8px #34D399;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] > label {
+        color: #7F8AA8 !important;
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.9px !important;
+        text-transform: uppercase !important;
+        margin: 0 0 8px 4px !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] > div {
+        gap: 7px !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] > div > label {
+        position: relative;
+        min-height: 44px;
+        box-sizing: border-box;
+        display: flex !important;
+        align-items: center;
+        padding: 0 12px 0 18px !important;
+        border: 1px solid rgba(76, 94, 150, 0.42);
+        border-radius: 9px;
+        background: linear-gradient(90deg, rgba(16, 22, 52, 0.92), rgba(10, 14, 34, 0.74));
+        color: #C4CAE0 !important;
+        overflow: hidden;
+        transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] > div > label::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 7px;
+        bottom: 7px;
+        width: 3px;
+        border-radius: 0 4px 4px 0;
+        background: #34405F;
+        transition: background 160ms ease, box-shadow 160ms ease;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] > div > label::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(105deg, transparent 0%, rgba(93, 225, 255, 0.06) 48%, transparent 100%);
+        transform: translateX(-110%);
+        transition: transform 420ms ease;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] > div > label:hover {
+        color: #FFFFFF !important;
+        border-color: rgba(93, 225, 255, 0.55);
+        background: rgba(20, 29, 63, 0.9);
+        transform: translateX(2px);
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] > div > label:hover::after {
+        transform: translateX(110%);
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] > div > label:has(input:checked) {
+        color: #FFFFFF !important;
+        border-color: rgba(168, 85, 247, 0.78);
+        background: linear-gradient(90deg, rgba(111, 52, 194, 0.34), rgba(22, 29, 67, 0.9));
+        box-shadow: inset 0 0 22px rgba(124, 58, 237, 0.13), 0 0 18px rgba(124, 58, 237, 0.12);
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] > div > label:has(input:checked)::after {
+        transform: translateX(110%);
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] > div > label:has(input:checked)::before {
+        background: #5DE1FF;
+        box-shadow: 0 0 10px #5DE1FF, 0 0 18px rgba(93, 225, 255, 0.7);
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] > div > label > div:first-child {
+        position: relative;
+        z-index: 1;
+        flex-shrink: 0;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] > div > label > div:last-child {
+        position: relative;
+        z-index: 1;
+        white-space: nowrap;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] input {
+        accent-color: #5DE1FF;
+    }
+
     /* Inputs and Buttons */
     .stTextInput input, .stTextArea textarea {
         background-color: #0B081A !important;
@@ -392,18 +628,41 @@ st.markdown("<hr style='border:0; border-top:1px solid #232730; margin:14px 0 20
 # -----------------------------------------------------------------------------
 # TAB NAVIGATION
 # -----------------------------------------------------------------------------
-tabs = st.tabs([
+navigation_items = [
     "📊 Overview & Analytics",
     "🔗 URL Scanner",
+    "📱 QR Phishing Scanner",
     "📧 Phishing Analyzer",
     "👤 Account Log Analyzer",
     "🎙️ Voice Analyzer",
     "🗄️ Event Inspector",
     "🔔 Alert Webhooks",
-])
+]
+
+with st.sidebar:
+    st.markdown(
+        """
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-mark"><span></span><span></span><span></span></div>
+            <div>
+                <div class="sidebar-brand-name">CYBERGUARD <b>V1.0</b></div>
+                <div class="sidebar-brand-sub"><i></i> SECURITY OPERATIONS CENTER</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    selected_navigation = st.radio(
+        "Main navigation",
+        navigation_items,
+        label_visibility="collapsed",
+        key="main_navigation",
+    )
+
+st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
 # TAB 1: OVERVIEW & ANALYTICS
-with tabs[0]:
+if selected_navigation == navigation_items[0]:
     events = st.session_state.events_store
     total_count = len(events)
     high_crit = len([e for e in events if e.get("risk_level") in ["HIGH", "CRITICAL"]])
@@ -473,7 +732,7 @@ with tabs[0]:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # TAB 2: URL SCANNER
-with tabs[1]:
+if selected_navigation == navigation_items[1]:
     st.markdown('<div class="card-panel">', unsafe_allow_html=True)
     st.markdown("""
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
@@ -484,27 +743,46 @@ with tabs[1]:
         </div>
     </div>
     """, unsafe_allow_html=True)
-    url_val = st.text_input("Target URL:", placeholder="e.g. http://phishingsite.com or https://example.com", label_visibility="collapsed")
+    url_val = st.text_input(
+        "Target URL:",
+        placeholder="e.g. http://phishingsite.com or https://example.com",
+        label_visibility="collapsed",
+        key="url_scanner_input",
+    )
     if st.button("Scan URL Reputation", type="primary"):
-        if url_val.strip():
+        normalized_url = url_val.strip()
+        if normalized_url:
             with st.spinner("Scanning URL Reputation..."):
-                res = analyze_url(url_val.strip())
-                add_event_to_store(res)
-                st.session_state["last_url_result"] = res
+                try:
+                    res = analyze_url(normalized_url)
+                except ValueError as exc:
+                    st.session_state.pop("last_url_result", None)
+                    st.session_state.pop("last_url_input", None)
+                    st.warning(str(exc))
+                else:
+                    add_event_to_store(res)
+                    st.session_state["last_url_result"] = res
+                    st.session_state["last_url_input"] = normalized_url
         else:
+            st.session_state.pop("last_url_result", None)
+            st.session_state.pop("last_url_input", None)
             st.warning("Please enter a valid URL.")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    if "last_url_result" in st.session_state:
+    try:
+        _validate_url(url_val)
+        current_url_is_valid = True
+    except ValueError:
+        current_url_is_valid = False
+
+    if (
+        current_url_is_valid
+        and "last_url_result" in st.session_state
+        and st.session_state.get("last_url_input") == url_val.strip()
+    ):
         res = st.session_state["last_url_result"]
         st.markdown('<div class="card-panel">', unsafe_allow_html=True)
-        v_col1, v_col2 = st.columns([3, 1])
-        with v_col1:
-            st.markdown(f'<div style="font-size:11px; font-family:\'JetBrains Mono\', monospace; color:#A1A1AA; text-transform:uppercase;">Analysis Result</div><div style="font-size:20px; font-weight:700; color:#FFFFFF; margin-top:4px;">Verdict: {get_badge_html(res["risk_level"], res["risk_score"])}</div>', unsafe_allow_html=True)
-        with v_col2:
-            if st.button("✨ Explain with AI", key="explain_url"):
-                with st.spinner("Generating AI Analysis..."):
-                    st.session_state["last_url_expl"] = generate_explanation(res)
+        st.markdown(f'<div style="font-size:11px; font-family:\'JetBrains Mono\', monospace; color:#A1A1AA; text-transform:uppercase;">Analysis Result</div><div style="font-size:20px; font-weight:700; color:#FFFFFF; margin-top:4px;">Verdict: {get_badge_html(res["risk_level"], res["risk_score"])}</div>', unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Detected Threat Evidence</h5>", unsafe_allow_html=True)
         if res.get("evidence"):
@@ -517,13 +795,85 @@ with tabs[1]:
             st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Recommended Actions</h5>", unsafe_allow_html=True)
             for rec in res["recommendations"]:
                 st.markdown(f'<div class="rec-item"><span class="rec-dot"></span><span>{rec}</span></div>', unsafe_allow_html=True)
-        if "last_url_expl" in st.session_state:
-            st.markdown(f'<div class="ai-box"><div style="color:#3B9EFF; font-weight:700; font-size:12px; margin-bottom:4px;">✨ AI Security Explanation</div><div style="color:#CBD5E1; font-size:12px; line-height:1.6;">{st.session_state["last_url_expl"]}</div></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-# TAB 3: PHISHING ANALYZER
-with tabs[2]:
+# TAB 3: QR PHISHING SCANNER
+if selected_navigation == navigation_items[2]:
     st.markdown('<div class="card-panel">', unsafe_allow_html=True)
+    st.markdown("""
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+        <div style="padding:8px; background:rgba(59,158,255,0.1); border:1px solid rgba(59,158,255,0.2); border-radius:10px; font-size:20px;">📱</div>
+        <div>
+            <h3 style="font-size:17px; font-weight:700; color:#FFFFFF; margin:0;">QR-Code Phishing Scanner</h3>
+            <p style="font-size:12px; color:#A1A1AA; margin:0;">Decode a QR destination and inspect it for malicious links, redirects, and impersonation.</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    qr_image = st.file_uploader(
+        "Upload a QR-code image",
+        type=["png", "jpg", "jpeg", "webp"],
+        key="qr_image_upload",
+    )
+    if qr_image is not None and st.button("Scan QR Code", type="primary"):
+        with st.spinner("Decoding and analyzing QR destination..."):
+            try:
+                qr_result = analyze_qr_image(qr_image.getvalue(), qr_image.name)
+            except (ValueError, RuntimeError) as exc:
+                st.session_state.pop("last_qr_result", None)
+                st.error(str(exc))
+            else:
+                add_event_to_store(qr_result)
+                st.session_state["last_qr_result"] = qr_result
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if "last_qr_result" in st.session_state:
+        res = st.session_state["last_qr_result"]
+        if HAS_PLOTLY:
+            risk_score = max(0, min(100, int(res.get("risk_score", 0))))
+            risk_level = (res.get("risk_level") or "SAFE").upper()
+            risk_colors = {
+                "SAFE": "#10B981",
+                "LOW": "#3B82F6",
+                "MEDIUM": "#F59E0B",
+                "HIGH": "#F97316",
+                "CRITICAL": "#F43F5E",
+            }
+            fig_qr_risk = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=risk_score,
+                number={"suffix": "/100", "font": {"color": "#FFFFFF", "size": 28}},
+                title={"text": f"QR RISK SCORE | {risk_level}", "font": {"color": "#A1A1AA", "size": 11}},
+                gauge={
+                    "axis": {"range": [0, 100], "tickcolor": "#71717A", "tickfont": {"color": "#A1A1AA"}},
+                    "bar": {"color": risk_colors.get(risk_level, "#A855F7")},
+                    "bgcolor": "#0B081A",
+                    "bordercolor": "#292852",
+                    "steps": [
+                        {"range": [0, 30], "color": "rgba(16,185,129,0.18)"},
+                        {"range": [30, 50], "color": "rgba(59,130,246,0.18)"},
+                        {"range": [50, 70], "color": "rgba(245,158,11,0.18)"},
+                        {"range": [70, 90], "color": "rgba(249,115,22,0.18)"},
+                        {"range": [90, 100], "color": "rgba(244,63,94,0.18)"},
+                    ],
+                },
+            ))
+            fig_qr_risk.update_layout(
+                paper_bgcolor="#11152F",
+                plot_bgcolor="#11152F",
+                height=220,
+                margin=dict(t=48, b=10, l=28, r=28),
+                font_color="#FFFFFF",
+            )
+            st.plotly_chart(fig_qr_risk, use_container_width=True, config={"displayModeBar": False})
+        st.markdown('<div class="card-panel">', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:11px; font-family:\'JetBrains Mono\', monospace; color:#A1A1AA; text-transform:uppercase;">QR Analysis Result</div><div style="font-size:20px; font-weight:700; color:#FFFFFF; margin-top:4px;">Verdict: {get_badge_html(res["risk_level"], res["risk_score"])}</div>', unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        for item in res.get("evidence", []):
+            st.markdown(f'<div class="evidence-item"><span style="color:#FB7185; font-weight:700;">{item["name"]}</span><span style="color:#A1A1AA;">{item["value"]}</span></div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+# TAB 4: PHISHING ANALYZER
+if selected_navigation == navigation_items[3]:
     st.markdown("""
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
         <div style="padding:8px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); border-radius:10px; font-size:20px;">📧</div>
@@ -535,27 +885,85 @@ with tabs[2]:
     """, unsafe_allow_html=True)
     header_mode = st.checkbox("Raw Email Header Mode", value=False)
     p_ph = "Paste raw email headers here (SPF, DKIM, DMARC)..." if header_mode else "Paste email content or suspicious SMS text here..."
+    communication_context = {}
+    with st.expander("Communication context (optional)"):
+        sender_email = st.text_input("Sender email", placeholder="sender@example.com")
+        expected_sender_domain = st.text_input("Expected sender domain", placeholder="company.com")
+        reply_to_email = st.text_input("Reply-to email", placeholder="support@example.com")
+        context_col1, context_col2 = st.columns(2)
+        with context_col1:
+            sent_hour = st.number_input("Sent hour (0-23)", min_value=0, max_value=23, value=12)
+            recent_message_count = st.number_input("Messages in recent period", min_value=0, value=0)
+        with context_col2:
+            usual_hours_text = st.text_input("Usual hours", placeholder="9,10,11,12,13,14,15,16,17")
+            typical_message_count = st.number_input("Typical messages in period", min_value=0, value=0)
+        new_sender = st.checkbox("Sender is new or unrecognized")
+        sender_domain = sender_email.rsplit("@", 1)[-1].strip().lower() if "@" in sender_email else ""
+        try:
+            usual_hours = [int(hour.strip()) for hour in usual_hours_text.split(",") if hour.strip()]
+        except ValueError:
+            usual_hours = []
+            st.warning("Usual hours must be comma-separated numbers from 0 to 23.")
+        communication_context = {
+            "sender_domain": sender_domain,
+            "expected_sender_domain": expected_sender_domain.strip().lower(),
+            "reply_to_email": reply_to_email.strip().lower(),
+            "sent_hour": sent_hour,
+            "usual_hours": usual_hours,
+            "recent_message_count": recent_message_count,
+            "typical_message_count": typical_message_count,
+            "new_sender": new_sender,
+        }
     p_text = st.text_area("Input Content:", placeholder=p_ph, height=140, label_visibility="collapsed")
     if st.button("Analyze Phishing Traits", type="primary"):
         if p_text.strip():
             with st.spinner("Analyzing Content..."):
-                res = analyze_phishing_text(p_text.strip())
+                res = analyze_phishing_text(p_text.strip(), communication_context)
                 add_event_to_store(res)
                 st.session_state["last_phish_result"] = res
         else:
             st.warning("Please paste email or message content.")
-    st.markdown('</div>', unsafe_allow_html=True)
-
     if "last_phish_result" in st.session_state:
         res = st.session_state["last_phish_result"]
+        if HAS_PLOTLY:
+            risk_score = max(0, min(100, int(res.get("risk_score", 0))))
+            risk_level = (res.get("risk_level") or "SAFE").upper()
+            risk_colors = {
+                "SAFE": "#10B981",
+                "LOW": "#3B82F6",
+                "MEDIUM": "#F59E0B",
+                "HIGH": "#F97316",
+                "CRITICAL": "#F43F5E",
+            }
+            fig_risk = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=risk_score,
+                number={"suffix": "/100", "font": {"color": "#FFFFFF", "size": 28}},
+                title={"text": f"PHISHING RISK | {risk_level}", "font": {"color": "#A1A1AA", "size": 11}},
+                gauge={
+                    "axis": {"range": [0, 100], "tickcolor": "#71717A", "tickfont": {"color": "#A1A1AA"}},
+                    "bar": {"color": risk_colors.get(risk_level, "#A855F7")},
+                    "bgcolor": "#0B081A",
+                    "bordercolor": "#292852",
+                    "steps": [
+                        {"range": [0, 30], "color": "rgba(16,185,129,0.18)"},
+                        {"range": [30, 50], "color": "rgba(59,130,246,0.18)"},
+                        {"range": [50, 70], "color": "rgba(245,158,11,0.18)"},
+                        {"range": [70, 90], "color": "rgba(249,115,22,0.18)"},
+                        {"range": [90, 100], "color": "rgba(244,63,94,0.18)"},
+                    ],
+                },
+            ))
+            fig_risk.update_layout(
+                paper_bgcolor="#11152F",
+                plot_bgcolor="#11152F",
+                height=220,
+                margin=dict(t=48, b=10, l=28, r=28),
+                font_color="#FFFFFF",
+            )
+            st.plotly_chart(fig_risk, use_container_width=True, config={"displayModeBar": False})
         st.markdown('<div class="card-panel">', unsafe_allow_html=True)
-        v_col1, v_col2 = st.columns([3, 1])
-        with v_col1:
-            st.markdown(f'<div style="font-size:11px; font-family:\'JetBrains Mono\', monospace; color:#A1A1AA; text-transform:uppercase;">Phishing Risk Assessment</div><div style="font-size:20px; font-weight:700; color:#FFFFFF; margin-top:4px;">Verdict: {get_badge_html(res["risk_level"], res["risk_score"])}</div>', unsafe_allow_html=True)
-        with v_col2:
-            if st.button("✨ Explain Risk", key="explain_phish"):
-                with st.spinner("Generating AI Analysis..."):
-                    st.session_state["last_phish_expl"] = generate_explanation(res)
+        st.markdown(f'<div style="font-size:11px; font-family:\'JetBrains Mono\', monospace; color:#A1A1AA; text-transform:uppercase;">Phishing Risk Assessment</div><div style="font-size:20px; font-weight:700; color:#FFFFFF; margin-top:4px;">Verdict: {get_badge_html(res["risk_level"], res["risk_score"])}</div>', unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Social Engineering Indicators</h5>", unsafe_allow_html=True)
         if res.get("evidence"):
@@ -568,12 +976,10 @@ with tabs[2]:
             st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Recommendations</h5>", unsafe_allow_html=True)
             for rec in res["recommendations"]:
                 st.markdown(f'<div class="rec-item"><span class="rec-dot"></span><span>{rec}</span></div>', unsafe_allow_html=True)
-        if "last_phish_expl" in st.session_state:
-            st.markdown(f'<div class="ai-box"><div style="color:#3B9EFF; font-weight:700; font-size:12px; margin-bottom:4px;">✨ AI Risk Context</div><div style="color:#CBD5E1; font-size:12px; line-height:1.6;">{st.session_state["last_phish_expl"]}</div></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-# TAB 4: ACCOUNT ANALYZER
-with tabs[3]:
+# TAB 5: ACCOUNT ANALYZER
+if selected_navigation == navigation_items[4]:
     st.markdown('<div class="card-panel">', unsafe_allow_html=True)
     st.markdown("""
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
@@ -607,13 +1013,7 @@ with tabs[3]:
     if "last_acc_result" in st.session_state:
         res = st.session_state["last_acc_result"]
         st.markdown('<div class="card-panel">', unsafe_allow_html=True)
-        v_col1, v_col2 = st.columns([3, 1])
-        with v_col1:
-            st.markdown(f'<div style="font-size:11px; font-family:\'JetBrains Mono\', monospace; color:#A1A1AA; text-transform:uppercase;">Account Risk Verdict</div><div style="font-size:20px; font-weight:700; color:#FFFFFF; margin-top:4px;">Verdict: {get_badge_html(res["risk_level"], res["risk_score"])}</div>', unsafe_allow_html=True)
-        with v_col2:
-            if st.button("✨ Explain Log Risk", key="explain_acc"):
-                with st.spinner("Generating AI Analysis..."):
-                    st.session_state["last_acc_expl"] = generate_explanation(res)
+        st.markdown(f'<div style="font-size:11px; font-family:\'JetBrains Mono\', monospace; color:#A1A1AA; text-transform:uppercase;">Account Risk Verdict</div><div style="font-size:20px; font-weight:700; color:#FFFFFF; margin-top:4px;">Verdict: {get_badge_html(res["risk_level"], res["risk_score"])}</div>', unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Suspicious Log Evidence</h5>", unsafe_allow_html=True)
         if res.get("evidence"):
@@ -626,12 +1026,10 @@ with tabs[3]:
             st.markdown("<h5 style='font-size:12px; font-weight:700; color:#A1A1AA; text-transform:uppercase; margin-bottom:8px;'>Security Guidelines</h5>", unsafe_allow_html=True)
             for rec in res["recommendations"]:
                 st.markdown(f'<div class="rec-item"><span class="rec-dot"></span><span>{rec}</span></div>', unsafe_allow_html=True)
-        if "last_acc_expl" in st.session_state:
-            st.markdown(f'<div class="ai-box"><div style="color:#3B9EFF; font-weight:700; font-size:12px; margin-bottom:4px;">✨ AI Threat Assessment</div><div style="color:#CBD5E1; font-size:12px; line-height:1.6;">{st.session_state["last_acc_expl"]}</div></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-# TAB 5: VOICE ANALYZER
-with tabs[4]:
+# TAB 6: VOICE ANALYZER
+if selected_navigation == navigation_items[5]:
     def reset_voice_analyzer():
         """Clear voice inputs, cached result, and derived display state."""
         for state_key in (
@@ -869,8 +1267,8 @@ with tabs[4]:
                 st.markdown(f'<div class="evidence-item"><span style="color:#FB7185; font-weight:700;">{item["name"]}</span><span style="color:#A1A1AA;">Weight: +{item["value"]}</span></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-# TAB 6: EVENT INSPECTOR
-with tabs[5]:
+# TAB 7: EVENT INSPECTOR
+if selected_navigation == navigation_items[6]:
     st.markdown('<div class="card-panel">', unsafe_allow_html=True)
     st.markdown("""
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
@@ -888,16 +1286,8 @@ with tabs[5]:
         event_options = {f"{e['id']} — {e.get('threat_category', 'EVENT')} [{e.get('risk_level', 'UNKNOWN')}]": e for e in events}
         selected_label = st.selectbox("Select Event ID:", list(event_options.keys()))
         selected_evt = event_options[selected_label]
-        e_col1, e_col2 = st.columns([3, 1])
-        with e_col1:
-            st.markdown("<div style='font-size:11px; font-family:monospace; color:#A1A1AA; margin-bottom:4px;'>💻 RAW ThreatEvent Payload</div>", unsafe_allow_html=True)
-        with e_col2:
-            if st.button("✨ Explain Event with AI", key="explain_inspector"):
-                with st.spinner("Analyzing Event Schema..."):
-                    st.session_state["last_inspector_expl"] = generate_explanation(selected_evt)
+        st.markdown("<div style='font-size:11px; font-family:monospace; color:#A1A1AA; margin-bottom:4px;'>💻 RAW ThreatEvent Payload</div>", unsafe_allow_html=True)
         st.json(selected_evt)
-        if "last_inspector_expl" in st.session_state:
-            st.markdown(f'<div class="ai-box"><div style="color:#3B9EFF; font-weight:700; font-size:12px; margin-bottom:4px;">✨ AI Threat Explanation</div><div style="color:#CBD5E1; font-size:12px; line-height:1.6;">{st.session_state["last_inspector_expl"]}</div></div>', unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
         csv_out = io.StringIO()
         writer = csv.writer(csv_out)
@@ -915,8 +1305,8 @@ with tabs[5]:
         st.markdown("<div style='text-align:center; padding:30px; color:#A1A1AA; font-size:13px;'>No logged threat events available in the system yet. Run scans using the other tabs first!</div>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# TAB 7: ALERT WEBHOOKS
-with tabs[6]:
+# TAB 8: ALERT WEBHOOKS
+if selected_navigation == navigation_items[7]:
     st.markdown('<div class="card-panel">', unsafe_allow_html=True)
     st.markdown("""
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">

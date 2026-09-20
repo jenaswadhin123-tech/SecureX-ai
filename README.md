@@ -27,6 +27,9 @@ The system extracts key acoustic features—including fundamental frequency ($f_
   - Detects money requests, OTP requests, banking credentials, urgency, impersonation, threats, and emergency claims.
   - Assigns weighted scam indicators and a capped score from 0 to 100.
   - Keeps voice authenticity and scam intent separate, then derives a conservative overall risk level.
+- **QR-Code Phishing Detection**:
+  - Upload a QR-code image, decode its destination URL, and scan it with the URL reputation engine.
+  - Detects shortened links, encoded redirects, deceptive user-info URLs, and brand-impersonation domains.
 - **Standalone Training Script (`train.py`)**:
   - Retrain the model on any dataset in `data/sample_audio/` at any time.
 

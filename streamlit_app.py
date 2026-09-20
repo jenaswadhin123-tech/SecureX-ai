@@ -101,7 +101,6 @@ st.markdown("""
         background-color: #151332 !important;
         background-image: linear-gradient(115deg, #11102A 0%, #191641 48%, #302052 100%) !important;
         background-size: 140% 140% !important;
-        animation: cyberguard-background-drift 22s ease-in-out infinite alternate;
         background-attachment: fixed !important;
         color: #F5F5F5 !important;
     }
@@ -152,7 +151,7 @@ st.markdown("""
             linear-gradient(rgba(93, 225, 255, 0.055) 1px, transparent 1px),
             linear-gradient(90deg, rgba(168, 85, 247, 0.05) 1px, transparent 1px);
         background-size: 220px 220px, 260px 260px, 300px 300px, 340px 340px, 280px 280px, 180px 180px, 220px 220px, 72px 72px, 72px 72px;
-        animation: cyberguard-neural-flow 24s linear infinite, cyberguard-network-breathe 8s ease-in-out infinite alternate;
+        animation: cyberguard-network-breathe 8s ease-in-out infinite alternate;
         will-change: transform, opacity;
         transform: translate3d(0, 0, 0);
         backface-visibility: hidden;
@@ -175,25 +174,14 @@ st.markdown("""
         backface-visibility: hidden;
     }
 
-    @keyframes cyberguard-neural-flow {
-        0% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
-        50% { background-position: 38px 24px, -28px 34px, 46px -20px, -35px -30px, 24px 42px, 24px -18px, -30px 26px, 36px 36px, -36px -36px; }
-        100% { background-position: 76px 48px, -56px 68px, 92px -40px, -70px -60px, 48px 84px, 48px -36px, -60px 52px, 72px 72px, -72px -72px; }
-    }
-
-    @keyframes cyberguard-background-drift {
-        0% { background-position: 0% 50%; }
-        100% { background-position: 100% 50%; }
-    }
-
     @keyframes cyberguard-scan-pulse {
-        0%, 100% { opacity: 0.30; background-position: center, -70% 0, 0 -100%; transform: translate3d(-2%, -1%, 0) scale(0.98); }
-        50% { opacity: 0.72; background-position: center, 70% 0, 0 100%; transform: translate3d(2%, 1%, 0) scale(1.02); }
+        0%, 100% { opacity: 0.30; transform: translate3d(-2%, -1%, 0) scale(0.98); }
+        50% { opacity: 0.72; transform: translate3d(2%, 1%, 0) scale(1.02); }
     }
 
     @keyframes cyberguard-network-breathe {
-        0% { opacity: 0.18; filter: brightness(0.9); transform: translate3d(-0.5%, 0, 0); }
-        100% { opacity: 0.30; filter: brightness(1.18); transform: translate3d(0.5%, 0.3%, 0); }
+        0% { opacity: 0.18; transform: translate3d(-0.5%, 0, 0); }
+        100% { opacity: 0.30; transform: translate3d(0.5%, 0.3%, 0); }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -580,6 +568,78 @@ st.markdown("""
         color: inherit !important;
         margin: 0 !important;
         font-weight: 600 !important;
+    }
+
+    /* Fallback selectors for Streamlit/BaseWeb radio markup variations. */
+    [data-testid="stSidebar"] [role="radiogroup"] label {
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        min-height: 44px !important;
+        box-sizing: border-box !important;
+        padding: 0 12px 0 18px !important;
+        margin: 0 !important;
+        border: 1px solid rgba(76, 94, 150, 0.42) !important;
+        border-radius: 9px !important;
+        background: linear-gradient(90deg, rgba(16, 22, 52, 0.94), rgba(10, 14, 34, 0.78)) !important;
+        color: #C4CAE0 !important;
+        overflow: hidden !important;
+        transition: all 160ms ease !important;
+    }
+    [data-testid="stSidebar"] [role="radiogroup"] label::before {
+        content: "" !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 6px !important;
+        bottom: 6px !important;
+        width: 3px !important;
+        border-radius: 0 4px 4px 0 !important;
+        background: #34405F !important;
+        box-shadow: none !important;
+    }
+    [data-testid="stSidebar"] [role="radiogroup"] label::after {
+        content: "" !important;
+        position: absolute !important;
+        inset: 0 !important;
+        pointer-events: none !important;
+        background: linear-gradient(105deg, transparent 20%, rgba(93, 225, 255, 0.18) 50%, transparent 80%) !important;
+        transform: translateX(-120%) !important;
+        transition: transform 420ms ease !important;
+    }
+    [data-testid="stSidebar"] [role="radiogroup"] label:hover {
+        color: #FFFFFF !important;
+        border-color: rgba(93, 225, 255, 0.78) !important;
+        background: rgba(20, 29, 63, 0.98) !important;
+        transform: translateX(3px) !important;
+        box-shadow: 0 0 14px rgba(93, 225, 255, 0.12) !important;
+    }
+    [data-testid="stSidebar"] [role="radiogroup"] label:hover::after {
+        transform: translateX(120%) !important;
+    }
+    [data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked),
+    [data-testid="stSidebar"] [role="radiogroup"] label:has([aria-checked="true"]),
+    [data-testid="stSidebar"] [role="radiogroup"] label:has([data-checked="true"]) {
+        color: #FFFFFF !important;
+        border-color: rgba(168, 85, 247, 0.9) !important;
+        background: linear-gradient(90deg, rgba(111, 52, 194, 0.48), rgba(22, 29, 67, 0.98)) !important;
+        box-shadow: inset 0 0 22px rgba(124, 58, 237, 0.18), 0 0 20px rgba(124, 58, 237, 0.2) !important;
+    }
+    [data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked)::before,
+    [data-testid="stSidebar"] [role="radiogroup"] label:has([aria-checked="true"])::before,
+    [data-testid="stSidebar"] [role="radiogroup"] label:has([data-checked="true"])::before {
+        background: #5DE1FF !important;
+        box-shadow: 0 0 10px #5DE1FF, 0 0 18px rgba(93, 225, 255, 0.7) !important;
+    }
+    [data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked)::after,
+    [data-testid="stSidebar"] [role="radiogroup"] label:has([aria-checked="true"])::after,
+    [data-testid="stSidebar"] [role="radiogroup"] label:has([data-checked="true"])::after {
+        transform: translateX(120%) !important;
+    }
+    [data-testid="stSidebar"] [role="radiogroup"] label p,
+    [data-testid="stSidebar"] [role="radiogroup"] label span {
+        position: relative !important;
+        z-index: 1 !important;
+        color: inherit !important;
     }
 
     /* Inputs and Buttons */

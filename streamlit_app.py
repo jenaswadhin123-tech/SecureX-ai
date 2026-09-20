@@ -809,15 +809,32 @@ if selected_navigation == navigation_items[2]:
         </div>
     </div>
     """, unsafe_allow_html=True)
-    qr_image = st.file_uploader(
-        "Upload a QR-code image",
-        type=["png", "jpg", "jpeg", "webp"],
-        key="qr_image_upload",
+    qr_input_mode = st.radio(
+        "QR image source",
+        ["Upload image", "Use camera"],
+        horizontal=True,
+        key="qr_input_mode",
     )
+    if qr_input_mode == "Use camera":
+        qr_image = st.camera_input(
+            "Point your camera at a QR code and capture it",
+            key="qr_camera_capture",
+        )
+        qr_filename = "camera_qr_capture.png"
+    else:
+        qr_image = st.file_uploader(
+            "Upload a QR-code image",
+            type=["png", "jpg", "jpeg", "webp"],
+            key="qr_image_upload",
+        )
+        qr_filename = qr_image.name if qr_image is not None else "uploaded_qr_image"
+
+    if qr_image is not None:
+        st.caption("Image captured. Scan it to decode the destination and check its reputation.")
     if qr_image is not None and st.button("Scan QR Code", type="primary"):
         with st.spinner("Decoding and analyzing QR destination..."):
             try:
-                qr_result = analyze_qr_image(qr_image.getvalue(), qr_image.name)
+                qr_result = analyze_qr_image(qr_image.getvalue(), qr_filename)
             except (ValueError, RuntimeError) as exc:
                 st.session_state.pop("last_qr_result", None)
                 st.error(str(exc))

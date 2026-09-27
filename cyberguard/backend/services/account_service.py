@@ -110,10 +110,16 @@ def _parse_log(log: str) -> List[Dict]:
     - `<timestamp> <ip> <status>`
     - `<timestamp> <user> <ip> <status>`
     - `<timestamp> <user> <ip> <lat,lon|city> <status>`
+    - Any format above with an optional `device=<id>` token
     """
     entries = []
     for line in log.splitlines():
-        parts = line.strip().split()
+        raw_parts = line.strip().split()
+        device = next(
+            (part.split("=", 1)[1] for part in raw_parts if part.lower().startswith("device=")),
+            None,
+        )
+        parts = [part for part in raw_parts if not part.lower().startswith("device=")]
         if len(parts) < 3:
             continue
 
@@ -127,7 +133,8 @@ def _parse_log(log: str) -> List[Dict]:
                 "user": "default_user",
                 "ip": ip,
                 "geo": _geolocate_ip(ip),
-                "status": parts[2].lower()
+                "status": parts[2].lower(),
+                "device": device,
             })
         elif len(parts) == 4:
             # ts user ip status
@@ -137,7 +144,8 @@ def _parse_log(log: str) -> List[Dict]:
                 "user": parts[1],
                 "ip": ip,
                 "geo": _geolocate_ip(ip),
-                "status": parts[3].lower()
+                "status": parts[3].lower(),
+                "device": device,
             })
         elif len(parts) >= 5:
             # ts user ip geo status
@@ -160,22 +168,52 @@ def _parse_log(log: str) -> List[Dict]:
                 "user": parts[1],
                 "ip": ip,
                 "geo": geo_val,
-                "status": parts[-1].lower()
+                "status": parts[-1].lower(),
+                "device": device,
             })
     return entries
 
 
 def _score_entries(entries: List[Dict]) -> Dict[str, int]:
-    """Score the log based on failed‑login patterns, AbuseIPDB, and Impossible Travel."""
+    """Score failed logins, device changes, AbuseIPDB, and impossible travel."""
     contributions: Dict[str, int] = {}
 
     # 1. Count failed attempts per IP (Brute Force)
     failed_counts = Counter(
         e["ip"] for e in entries if any(k in e["status"] for k in FAILED_LOGIN_KEYWORDS)
     )
+    failed_users_by_ip = defaultdict(set)
+    for entry in entries:
+        if any(keyword in entry["status"] for keyword in FAILED_LOGIN_KEYWORDS):
+            if entry["user"] != "default_user":
+                failed_users_by_ip[entry["ip"]].add(entry["user"])
+
     for ip, cnt in failed_counts.items():
         if cnt >= MAX_FAILED_PER_IP:
             contributions[f"BRUTE_FORCE_{ip.replace('.', '_')}"] = min(100, cnt * 10)
+        distinct_users = len(failed_users_by_ip[ip])
+        if distinct_users >= 5:
+            contributions[f"PASSWORD_SPRAY_{ip.replace('.', '_')}"] = min(60, distinct_users * 8)
+
+    successful_device_logins = defaultdict(list)
+    for entry in entries:
+        if (
+            entry.get("device")
+            and entry.get("ts")
+            and "success" in entry["status"]
+            and entry["user"] != "default_user"
+        ):
+            successful_device_logins[entry["user"]].append(entry)
+
+    for user, logins in successful_device_logins.items():
+        seen_devices = set()
+        for login in sorted(logins, key=lambda entry: entry["ts"]):
+            device = login["device"]
+            if seen_devices and device not in seen_devices:
+                safe_user = user.replace("@", "_").replace(".", "_")
+                contributions[f"NEW_DEVICE_{safe_user}"] = 20
+                break
+            seen_devices.add(device)
 
     # 2. AbuseIPDB Lookup
     from .abuseipdb_service import _query_abuseipdb_ip

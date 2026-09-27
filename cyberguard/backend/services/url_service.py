@@ -25,6 +25,14 @@ MALICIOUS_DOMAINS = {
     "malicious.example": 25,
     "bad-domain.net": 20,
 }
+BRAND_DOMAINS = {
+    "amazon": ("amazon.com",),
+    "apple": ("apple.com",),
+    "google": ("google.com", "google.co.uk", "google.ca", "google.com.au"),
+    "microsoft": ("microsoft.com", "microsoftonline.com", "office.com", "live.com"),
+    "paypal": ("paypal.com",),
+}
+BRAND_CONFUSABLES = str.maketrans({"0": "o", "1": "l", "3": "e", "5": "s", "7": "t"})
 
 MAX_WEBSITE_BYTES = 1_000_000
 WEBSITE_TIMEOUT_SECONDS = 5
@@ -178,15 +186,61 @@ def _query_google_safe_browsing(url: str) -> int:
 
 
 def _score_url(url: str) -> Dict[str, int]:
-    """Score a URL based on presence in the block‑list.
-    Returns a dict mapping the domain (if malicious) to its weight.
-    """
+    """Score block-list matches and common URL spoofing indicators."""
     parsed = urlparse(url)
-    domain = parsed.hostname or ""
+    domain = (parsed.hostname or "").lower().rstrip(".")
     contributions: Dict[str, int] = {}
     if domain in MALICIOUS_DOMAINS:
         contributions[domain.upper()] = MALICIOUS_DOMAINS[domain]
+
+    if parsed.username is not None or parsed.password is not None:
+        contributions["URL_DECEPTIVE_USERINFO"] = 20
+
+    trusted_host = any(
+        domain == trusted_domain or domain.endswith(f".{trusted_domain}")
+        for trusted_domains in BRAND_DOMAINS.values()
+        for trusted_domain in trusted_domains
+    )
+    if not trusted_host:
+        host_tokens = [
+            token.translate(BRAND_CONFUSABLES)
+            for label in domain.split(".")
+            for token in label.split("-")
+        ]
+        for brand in BRAND_DOMAINS:
+            if any(_edit_distance_at_most_one(token, brand) for token in host_tokens):
+                contributions["URL_BRAND_LOOKALIKE_DOMAIN"] = 25
+                break
+
+    if domain.startswith("xn--") or ".xn--" in domain:
+        contributions["URL_IDN_HOSTNAME"] = 10
     return contributions
+
+
+def _edit_distance_at_most_one(left: str, right: str) -> bool:
+    """Return whether two strings differ by at most one insertion, deletion, or substitution."""
+    if abs(len(left) - len(right)) > 1:
+        return False
+
+    if len(left) > len(right):
+        left, right = right, left
+
+    left_index = right_index = differences = 0
+    while left_index < len(left) and right_index < len(right):
+        if left[left_index] == right[right_index]:
+            left_index += 1
+            right_index += 1
+            continue
+        differences += 1
+        if differences > 1:
+            return False
+        if len(left) == len(right):
+            left_index += 1
+        right_index += 1
+
+    if left_index < len(left) or right_index < len(right):
+        differences += 1
+    return differences <= 1
 
 
 def analyze_url(url: str) -> Dict:

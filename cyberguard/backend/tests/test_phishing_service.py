@@ -30,6 +30,18 @@ class TestPhishingService(unittest.TestCase):
         result = analyze_phishing_text("Please review this message.")
         self.assertEqual(result["risk_score"], 0)
 
+    def test_authority_claim_with_sensitive_request_is_flagged(self):
+        result = analyze_phishing_text(
+            "The CEO needs you to send money and share the payroll password today."
+        )
+        evidence_names = {item["name"] for item in result["evidence"]}
+        self.assertIn("POSSIBLE_IMPERSONATION_REQUEST", evidence_names)
+
+    def test_authority_mention_without_sensitive_request_is_not_flagged(self):
+        result = analyze_phishing_text("The university is hosting a public lecture next week.")
+        evidence_names = {item["name"] for item in result["evidence"]}
+        self.assertNotIn("POSSIBLE_IMPERSONATION_REQUEST", evidence_names)
+
 
 if __name__ == "__main__":
     unittest.main()

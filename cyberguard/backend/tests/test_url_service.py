@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from cyberguard.backend.services.url_service import _inspect_website, _query_google_safe_browsing, analyze_url
+from cyberguard.backend.services.url_service import _inspect_website, _query_google_safe_browsing, _score_url, analyze_url
 
 class TestURLService(unittest.TestCase):
 
@@ -11,6 +11,18 @@ class TestURLService(unittest.TestCase):
     def test_url_without_scheme_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "http:// or https://"):
             analyze_url("example.com/login")
+
+    def test_url_scoring_detects_brand_lookalikes_and_deceptive_userinfo(self):
+        lookalike = _score_url("https://paypa1.com/login")
+        brand_claim = _score_url("https://paypal-login.example/login")
+        deceptive = _score_url("https://paypal.com@attacker.example/login")
+
+        self.assertIn("URL_BRAND_LOOKALIKE_DOMAIN", lookalike)
+        self.assertIn("URL_BRAND_LOOKALIKE_DOMAIN", brand_claim)
+        self.assertIn("URL_DECEPTIVE_USERINFO", deceptive)
+
+    def test_url_scoring_allows_known_brand_domains_and_subdomains(self):
+        self.assertEqual(_score_url("https://accounts.google.com/login"), {})
 
     @patch("cyberguard.backend.config.SAFE_BROWSING_API_KEY", "")
     def test_gsb_no_api_key(self):

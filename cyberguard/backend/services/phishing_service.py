@@ -97,6 +97,22 @@ def _score_communication_pattern(
 
     if context.get("new_sender") is True:
         contributions["NEW_SENDER_PATTERN"] = 8
+
+    claims_authority = re.search(
+        r"\b(?:ceo|cfo|chief executive|director|manager|government|tax department|police|"
+        r"court|bank|university|school administration|teacher|professor|it support|"
+        r"security team|your friend|your family|your mother|your father)\b",
+        content,
+        re.IGNORECASE,
+    )
+    requests_sensitive_action = re.search(
+        r"\b(?:password|credentials|one[- ]time code|\botp\b|wire transfer|"
+        r"gift card|bank details|send money|make a payment|verify your account)\b",
+        content,
+        re.IGNORECASE,
+    )
+    if claims_authority and requests_sensitive_action:
+        contributions["POSSIBLE_IMPERSONATION_REQUEST"] = 18
     return contributions
 
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Search, ShieldCheck, Loader2 } from 'lucide-react';
 import { analyzePhishing } from '../services/api';
+import RiskGauge from './RiskGauge';
 
 export default function PhishingAnalyzer({ onEventGenerated }) {
   const [content, setContent] = useState('');
@@ -101,16 +102,8 @@ export default function PhishingAnalyzer({ onEventGenerated }) {
 
       {result && (
         <div className="bg-cardBg border border-cardBorder p-6 rounded-xl space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-cardBorder">
-            <div>
-              <span className="text-xs font-mono text-secondaryText uppercase tracking-wider">Phishing Risk Assessment</span>
-              <h4 className="text-xl font-bold text-white mt-1 flex items-center gap-2">
-                Verdict: <span className={`px-3 py-1 rounded-full border text-xs font-extrabold ${getVerdictStyle(result.risk_level)}`}>
-                  {result.risk_level || 'SAFE'} ({result.risk_score || 0}/100)
-                </span>
-              </h4>
-            </div>
-
+          <div className="rounded-xl border border-cardBorder bg-darkBg/60 p-4">
+            <RiskGauge score={result.risk_score || 0} level={result.risk_level || 'SAFE'} label="PHISHING RISK SCORE" />
           </div>
 
           {/* Evidence Items */}

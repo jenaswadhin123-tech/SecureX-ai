@@ -20,6 +20,7 @@ import io
 import csv
 import hashlib
 import json
+import math
 
 # Safe Plotly & Librosa import
 try:
@@ -738,6 +739,47 @@ def get_badge_html(level, score=None):
     score_str = f" ({score}/100)" if score is not None else ""
     return f'<span class="risk-badge {badge_cls}">{lvl}{score_str}</span>'
 
+
+def render_risk_speedometer(label, risk_score, risk_level):
+    if not HAS_PLOTLY:
+        return
+    score_value = max(0, min(100, int(risk_score or 0)))
+    level_value = (risk_level or "SAFE").upper()
+    risk_colors = {
+        "SAFE": "#10B981",
+        "LOW": "#3B82F6",
+        "MEDIUM": "#F59E0B",
+        "HIGH": "#F97316",
+        "CRITICAL": "#F43F5E",
+    }
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=score_value,
+        number={"suffix": "/100", "font": {"color": "#FFFFFF", "size": 28}},
+        title={"text": f"{label} | {level_value}", "font": {"color": "#A1A1AA", "size": 11}},
+        gauge={
+            "axis": {"range": [0, 100], "tickcolor": "#71717A", "tickfont": {"color": "#A1A1AA"}},
+            "bar": {"color": risk_colors.get(level_value, "#A855F7")},
+            "bgcolor": "#0B081A",
+            "bordercolor": "#292852",
+            "steps": [
+                {"range": [0, 30], "color": "rgba(16,185,129,0.18)"},
+                {"range": [30, 50], "color": "rgba(59,130,246,0.18)"},
+                {"range": [50, 70], "color": "rgba(245,158,11,0.18)"},
+                {"range": [70, 90], "color": "rgba(249,115,22,0.18)"},
+                {"range": [90, 100], "color": "rgba(244,63,94,0.18)"},
+            ],
+        },
+    ))
+    fig.update_layout(
+        paper_bgcolor="#11152F",
+        plot_bgcolor="#11152F",
+        height=220,
+        margin=dict(t=48, b=10, l=28, r=28),
+        font_color="#FFFFFF",
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
 # -----------------------------------------------------------------------------
 # TOP HEADER COMPONENT
 # -----------------------------------------------------------------------------
@@ -925,6 +967,7 @@ if selected_navigation == navigation_items[1]:
         and st.session_state.get("last_url_input") == url_val.strip()
     ):
         res = st.session_state["last_url_result"]
+        render_risk_speedometer("URL RISK SCORE", res.get("risk_score", 0), res.get("risk_level", "SAFE"))
         st.markdown('<div class="card-panel">', unsafe_allow_html=True)
         st.markdown(f'<div style="font-size:11px; font-family:\'JetBrains Mono\', monospace; color:#A1A1AA; text-transform:uppercase;">Analysis Result</div><div style="font-size:20px; font-weight:700; color:#FFFFFF; margin-top:4px;">Verdict: {get_badge_html(res["risk_level"], res["risk_score"])}</div>', unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
@@ -1104,43 +1147,7 @@ if selected_navigation == navigation_items[3]:
             st.warning("Please paste email or message content.")
     if "last_phish_result" in st.session_state:
         res = st.session_state["last_phish_result"]
-        if HAS_PLOTLY:
-            risk_score = max(0, min(100, int(res.get("risk_score", 0))))
-            risk_level = (res.get("risk_level") or "SAFE").upper()
-            risk_colors = {
-                "SAFE": "#10B981",
-                "LOW": "#3B82F6",
-                "MEDIUM": "#F59E0B",
-                "HIGH": "#F97316",
-                "CRITICAL": "#F43F5E",
-            }
-            fig_risk = go.Figure(go.Indicator(
-                mode="gauge+number",
-                value=risk_score,
-                number={"suffix": "/100", "font": {"color": "#FFFFFF", "size": 28}},
-                title={"text": f"PHISHING RISK | {risk_level}", "font": {"color": "#A1A1AA", "size": 11}},
-                gauge={
-                    "axis": {"range": [0, 100], "tickcolor": "#71717A", "tickfont": {"color": "#A1A1AA"}},
-                    "bar": {"color": risk_colors.get(risk_level, "#A855F7")},
-                    "bgcolor": "#0B081A",
-                    "bordercolor": "#292852",
-                    "steps": [
-                        {"range": [0, 30], "color": "rgba(16,185,129,0.18)"},
-                        {"range": [30, 50], "color": "rgba(59,130,246,0.18)"},
-                        {"range": [50, 70], "color": "rgba(245,158,11,0.18)"},
-                        {"range": [70, 90], "color": "rgba(249,115,22,0.18)"},
-                        {"range": [90, 100], "color": "rgba(244,63,94,0.18)"},
-                    ],
-                },
-            ))
-            fig_risk.update_layout(
-                paper_bgcolor="#11152F",
-                plot_bgcolor="#11152F",
-                height=220,
-                margin=dict(t=48, b=10, l=28, r=28),
-                font_color="#FFFFFF",
-            )
-            st.plotly_chart(fig_risk, use_container_width=True, config={"displayModeBar": False})
+        render_risk_speedometer("PHISHING RISK SCORE", res.get("risk_score", 0), res.get("risk_level", "SAFE"))
         st.markdown('<div class="card-panel">', unsafe_allow_html=True)
         st.markdown(f'<div style="font-size:11px; font-family:\'JetBrains Mono\', monospace; color:#A1A1AA; text-transform:uppercase;">Phishing Risk Assessment</div><div style="font-size:20px; font-weight:700; color:#FFFFFF; margin-top:4px;">Verdict: {get_badge_html(res["risk_level"], res["risk_score"])}</div>', unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
@@ -1191,6 +1198,7 @@ if selected_navigation == navigation_items[4]:
 
     if "last_acc_result" in st.session_state:
         res = st.session_state["last_acc_result"]
+        render_risk_speedometer("ACCOUNT RISK SCORE", res.get("risk_score", 0), res.get("risk_level", "SAFE"))
         st.markdown('<div class="card-panel">', unsafe_allow_html=True)
         st.markdown(f'<div style="font-size:11px; font-family:\'JetBrains Mono\', monospace; color:#A1A1AA; text-transform:uppercase;">Account Risk Verdict</div><div style="font-size:20px; font-weight:700; color:#FFFFFF; margin-top:4px;">Verdict: {get_badge_html(res["risk_level"], res["risk_score"])}</div>', unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
@@ -1372,6 +1380,7 @@ if selected_navigation == navigation_items[5]:
 
     if "last_voice_result" in st.session_state:
         res = st.session_state["last_voice_result"]
+        render_risk_speedometer("VOICE RISK SCORE", res.get("risk_score", 0), res.get("risk_level", "SAFE"))
         st.markdown('<div class="card-panel">', unsafe_allow_html=True)
         st.markdown(f'<div style="font-size:11px; font-family:\'JetBrains Mono\', monospace; color:#A1A1AA; text-transform:uppercase;">Voice Threat Verdict</div><div style="font-size:20px; font-weight:700; color:#FFFFFF; margin-top:4px;">Risk Level: {get_badge_html(res["risk_level"], res["risk_score"])}</div>', unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
@@ -1582,6 +1591,7 @@ if selected_navigation == navigation_items[8]:
 
     if "last_cyber_threat_result" in st.session_state:
         result = st.session_state["last_cyber_threat_result"]
+        render_risk_speedometer("THREAT SCORE", result.get("risk_score", 0), result.get("risk_level", "SAFE"))
         risk_col, score_col, batch_col = st.columns(3)
         risk_col.metric("Risk level", result.get("risk_level", "SAFE"))
         score_col.metric("Risk score", f"{result.get('risk_score', 0)}/100")
@@ -1685,6 +1695,7 @@ if selected_navigation == navigation_items[9]:
     if visual_result or voice_result:
         if visual_result:
             st.subheader("Visual media assessment")
+            render_risk_speedometer("VISUAL RISK SCORE", visual_result.get("risk_score", 0), visual_result.get("risk_level", "SAFE"))
             st.metric(
                 "Visual risk",
                 f"{visual_result.get('risk_level', 'SAFE')} ({visual_result.get('risk_score', 0)}/100)",
@@ -1699,6 +1710,7 @@ if selected_navigation == navigation_items[9]:
 
         if voice_result:
             st.subheader("Audio deepfake assessment")
+            render_risk_speedometer("VOICE RISK SCORE", voice_result.get("risk_score", 0), voice_result.get("risk_level", "SAFE"))
             voice_cols = st.columns(3)
             voice_cols[0].metric("Voice verdict", voice_result.get("voice_verdict", "N/A"))
             voice_cols[1].metric("AI confidence", f"{voice_result.get('voice_confidence', 0)}%")

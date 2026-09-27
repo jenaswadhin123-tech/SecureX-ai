@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { UserCheck, Search, ShieldCheck, Sparkles, Loader2 } from 'lucide-react';
-import { analyzeAccount, explainThreat } from '../services/api';
+import { UserCheck, Search, ShieldCheck, Loader2 } from 'lucide-react';
+import { analyzeAccount } from '../services/api';
 
 export default function AccountAnalyzer({ onEventGenerated }) {
   const [log, setLog] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const [explanation, setExplanation] = useState('');
-  const [explainLoading, setExplainLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleScan = async (e) => {
@@ -16,7 +14,6 @@ export default function AccountAnalyzer({ onEventGenerated }) {
     setLoading(true);
     setError('');
     setResult(null);
-    setExplanation('');
 
     try {
       const res = await analyzeAccount(log.trim());
@@ -26,19 +23,6 @@ export default function AccountAnalyzer({ onEventGenerated }) {
       setError(err.response?.data?.detail || 'Failed to analyze log. Please check backend API.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleExplain = async () => {
-    if (!result) return;
-    setExplainLoading(true);
-    try {
-      const res = await explainThreat(result);
-      setExplanation(res.explanation || 'No explanation available.');
-    } catch (err) {
-      setExplanation('Failed to generate AI explanation.');
-    } finally {
-      setExplainLoading(false);
     }
   };
 
@@ -70,7 +54,7 @@ export default function AccountAnalyzer({ onEventGenerated }) {
             rows={5}
             value={log}
             onChange={(e) => setLog(e.target.value)}
-            placeholder="Paste authentication log entries (e.g. Failed login attempt for user admin from IP 192.168.1.100)..."
+            placeholder={"2026-01-01T00:00:00 alice 10.0.0.1 success device=laptop-1\n2026-01-02T00:00:00 alice 10.0.0.2 success device=phone-2"}
             className="w-full bg-darkBg border border-cardBorder focus:border-accentBlue rounded-xl p-4 text-sm text-white focus:outline-none transition-colors font-mono"
           />
 
@@ -103,14 +87,6 @@ export default function AccountAnalyzer({ onEventGenerated }) {
               </h4>
             </div>
 
-            <button
-              onClick={handleExplain}
-              disabled={explainLoading}
-              className="px-4 py-2 bg-darkBg border border-cardBorder hover:border-accentBlue hover:text-accentBlue text-xs font-medium text-primaryText rounded-lg transition-all flex items-center space-x-1.5"
-            >
-              {explainLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
-              <span>{explainLoading ? 'Generating...' : 'Explain Log Risk'}</span>
-            </button>
           </div>
 
           {/* Evidence Items */}
@@ -149,15 +125,6 @@ export default function AccountAnalyzer({ onEventGenerated }) {
           )}
 
           {/* AI Explanation Box */}
-          {explanation && (
-            <div className="p-4 bg-darkBg border border-accentBlue/30 rounded-xl space-y-2">
-              <div className="flex items-center space-x-2 text-accentBlue text-xs font-bold">
-                <Sparkles className="w-4 h-4 text-amber-400" />
-                <span>AI Threat Assessment</span>
-              </div>
-              <p className="text-xs text-secondaryText leading-relaxed">{explanation}</p>
-            </div>
-          )}
         </div>
       )}
     </div>

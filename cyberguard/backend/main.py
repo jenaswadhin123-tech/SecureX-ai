@@ -19,7 +19,7 @@ app.add_middleware(
 # Register rate‑limit middleware
 app.add_middleware(RateLimitMiddleware)
 
-from .api import voice, phishing, url, qr, account, explanation, events, health, auth
+from .api import voice, phishing, url, qr, account, cyber_threat, explanation, events, health, auth
 from .logging_config import logger
 
 @app.on_event("startup")
@@ -45,6 +45,7 @@ app.include_router(phishing.router, prefix="/api")
 app.include_router(url.router, prefix="/api")
 app.include_router(qr.router, prefix="/api")
 app.include_router(account.router, prefix="/api")
+app.include_router(cyber_threat.router, prefix="/api")
 app.include_router(explanation.router, prefix="/api")
 app.include_router(events.router, prefix="/api")
 app.include_router(health.router, prefix="/api")

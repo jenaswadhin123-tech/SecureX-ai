@@ -4,11 +4,12 @@ import Overview from './components/Overview';
 import UrlScanner from './components/UrlScanner';
 import PhishingAnalyzer from './components/PhishingAnalyzer';
 import AccountAnalyzer from './components/AccountAnalyzer';
+import CyberThreatAnalyzer from './components/CyberThreatAnalyzer';
 import VoiceAnalyzer from './components/VoiceAnalyzer';
 import EventInspector from './components/EventInspector';
 import WebhooksConfig from './components/WebhooksConfig';
 import { fetchEvents, fetchTotalCount } from './services/api';
-import { LayoutDashboard, Link as LinkIcon, Mail, UserCheck, Database, Bell, Mic } from 'lucide-react';
+import { LayoutDashboard, Link as LinkIcon, Mail, UserCheck, Database, Bell, Mic, Activity } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -47,6 +48,7 @@ export default function App() {
     { id: 'url', label: 'URL Scanner', icon: LinkIcon },
     { id: 'phishing', label: 'Phishing Analyzer', icon: Mail },
     { id: 'account', label: 'Account Log Analyzer', icon: UserCheck },
+    { id: 'cyber-threat', label: 'Cyber Threat Analyzer', icon: Activity },
     { id: 'voice', label: 'Voice Analyzer', icon: Mic },
     { id: 'inspector', label: 'Event Inspector', icon: Database },
     { id: 'webhooks', label: 'Alert Webhooks', icon: Bell },
@@ -85,6 +87,7 @@ export default function App() {
           {activeTab === 'url' && <UrlScanner onEventGenerated={loadData} />}
           {activeTab === 'phishing' && <PhishingAnalyzer onEventGenerated={loadData} />}
           {activeTab === 'account' && <AccountAnalyzer onEventGenerated={loadData} />}
+          {activeTab === 'cyber-threat' && <CyberThreatAnalyzer onEventGenerated={loadData} />}
           {activeTab === 'voice' && <VoiceAnalyzer onEventGenerated={loadData} />}
           {activeTab === 'inspector' && <EventInspector events={events} />}
           {activeTab === 'webhooks' && <WebhooksConfig />}

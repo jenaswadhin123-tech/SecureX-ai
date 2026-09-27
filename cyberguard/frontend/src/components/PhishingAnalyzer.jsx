@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { Mail, Search, ShieldCheck, Sparkles, Loader2 } from 'lucide-react';
-import { analyzePhishing, explainThreat } from '../services/api';
+import { Mail, Search, ShieldCheck, Loader2 } from 'lucide-react';
+import { analyzePhishing } from '../services/api';
 
 export default function PhishingAnalyzer({ onEventGenerated }) {
   const [content, setContent] = useState('');
   const [headerMode, setHeaderMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const [explanation, setExplanation] = useState('');
-  const [explainLoading, setExplainLoading] = useState(false);
   const [error, setError] = useState('');
 
 
@@ -39,7 +37,6 @@ export default function PhishingAnalyzer({ onEventGenerated }) {
     setLoading(true);
     setError('');
     setResult(null);
-    setExplanation('');
 
     try {
       const res = await analyzePhishing(content.trim());
@@ -49,19 +46,6 @@ export default function PhishingAnalyzer({ onEventGenerated }) {
       setError(err.response?.data?.detail || 'Failed to analyze text. Please verify backend service.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleExplain = async () => {
-    if (!result) return;
-    setExplainLoading(true);
-    try {
-      const res = await explainThreat(result);
-      setExplanation(res.explanation || 'No explanation available.');
-    } catch (err) {
-      setExplanation('Failed to generate AI explanation.');
-    } finally {
-      setExplainLoading(false);
     }
   };
 
@@ -127,14 +111,6 @@ export default function PhishingAnalyzer({ onEventGenerated }) {
               </h4>
             </div>
 
-            <button
-              onClick={handleExplain}
-              disabled={explainLoading}
-              className="px-4 py-2 bg-darkBg border border-cardBorder hover:border-accentBlue hover:text-accentBlue text-xs font-medium text-primaryText rounded-lg transition-all flex items-center space-x-1.5"
-            >
-              {explainLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
-              <span>{explainLoading ? 'Generating...' : 'Explain Risk'}</span>
-            </button>
           </div>
 
           {/* Evidence Items */}
@@ -173,15 +149,6 @@ export default function PhishingAnalyzer({ onEventGenerated }) {
           )}
 
           {/* AI Explanation Modal / Box */}
-          {explanation && (
-            <div className="p-4 bg-darkBg border border-accentBlue/30 rounded-xl space-y-2">
-              <div className="flex items-center space-x-2 text-accentBlue text-xs font-bold">
-                <Sparkles className="w-4 h-4 text-amber-400" />
-                <span>AI Risk Context</span>
-              </div>
-              <p className="text-xs text-secondaryText leading-relaxed">{explanation}</p>
-            </div>
-          )}
         </div>
       )}
     </div>

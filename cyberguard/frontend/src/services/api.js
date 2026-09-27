@@ -36,6 +36,14 @@ export const analyzeAccount = async (log) => {
   return response.data;
 };
 
+export const analyzeCyberThreat = async (events, windowMinutes = 15) => {
+  const response = await axios.post(`${API_BASE}/analyze/cyber-threat`, {
+    events,
+    window_minutes: windowMinutes,
+  });
+  return response.data;
+};
+
 export const analyzeVoice = async (audioFile) => {
   const formData = new FormData();
   formData.append('file', audioFile);

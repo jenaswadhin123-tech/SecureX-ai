@@ -19,6 +19,7 @@ from datetime import datetime
 import io
 import csv
 import hashlib
+import json
 
 # Safe Plotly & Librosa import
 try:
@@ -39,6 +40,12 @@ from cyberguard.backend.services.url_service import _validate_url, analyze_url
 from cyberguard.backend.services.qr_service import analyze_qr_image
 from cyberguard.backend.services.phishing_service import analyze_phishing_text
 from cyberguard.backend.services.account_service import analyze_account_log
+from cyberguard.backend.services.cyber_threat_service import analyze_cyber_events
+from cyberguard.backend.services.media_forensics_service import (
+    analyze_image_bytes,
+    analyze_video_bytes,
+    extract_video_audio,
+)
 from cyberguard.backend.services.webhook_service import send_threat_alert
 
 TRANSCRIPTION_PROFILES = {
@@ -772,6 +779,8 @@ navigation_items = [
     "🎙️ Voice Analyzer",
     "🗄️ Event Inspector",
     "🔔 Alert Webhooks",
+    "🧠 Cyber Threat Analyzer",
+    "🎭 Deepfake Media Analyzer",
 ]
 
 with st.sidebar:
@@ -1506,6 +1515,202 @@ if selected_navigation == navigation_items[7]:
                     st.error(f"❌ Failed to deliver alert to {wh_url.strip()}. Verify URL.")
         else:
             st.warning("Please enter a webhook URL.")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# TAB 9: INTELLIGENT CYBER THREAT ANALYZER
+if selected_navigation == navigation_items[8]:
+    st.markdown('<div class="card-panel">', unsafe_allow_html=True)
+    st.markdown("""
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+        <div style="padding:8px; background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.2); border-radius:10px; font-size:20px;">🧠</div>
+        <div>
+            <h3 style="font-size:17px; font-weight:700; color:#FFFFFF; margin:0;">Intelligent Cyber Threat Analyzer</h3>
+            <p style="font-size:12px; color:#A1A1AA; margin:0;">Correlates malware, network, API, data-transfer, user-activity, and system-log indicators.</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    example_events = [
+        {
+            "event_type": "endpoint_alert",
+            "user": "workstation-17",
+            "threat_indicator": "Example.Malware.Indicator",
+        },
+        {
+            "event_type": "api_request",
+            "user": "service-account",
+            "status_code": 429,
+            "request_count": 25,
+        },
+        {
+            "event_type": "network",
+            "user": "service-account",
+            "direction": "egress",
+            "destination_port": 4444,
+            "bytes_out": 115343360,
+        },
+    ]
+    event_json = st.text_area(
+        "Structured security events (JSON array)",
+        value=json.dumps(example_events, indent=2),
+        height=260,
+        key="cyber_threat_events_json",
+    )
+    analysis_window = st.number_input(
+        "Analysis window (minutes)",
+        min_value=1,
+        max_value=1440,
+        value=15,
+        key="cyber_threat_window_minutes",
+    )
+    if st.button("Analyze Security Events", type="primary", key="analyze_cyber_events"):
+        try:
+            events = json.loads(event_json)
+            if not isinstance(events, list) or not events:
+                raise ValueError("Provide a non-empty JSON array of event objects.")
+            if len(events) > 500:
+                raise ValueError("Analyze at most 500 events per batch.")
+            if not all(isinstance(event, dict) for event in events):
+                raise ValueError("Every item in the JSON array must be an event object.")
+
+            result = analyze_cyber_events(events, int(analysis_window))
+            add_event_to_store(result)
+            st.session_state["last_cyber_threat_result"] = result
+        except json.JSONDecodeError as exc:
+            st.error(f"Invalid JSON near character {exc.pos}: {exc.msg}")
+        except ValueError as exc:
+            st.error(str(exc))
+
+    if "last_cyber_threat_result" in st.session_state:
+        result = st.session_state["last_cyber_threat_result"]
+        risk_col, score_col, batch_col = st.columns(3)
+        risk_col.metric("Risk level", result.get("risk_level", "SAFE"))
+        score_col.metric("Risk score", f"{result.get('risk_score', 0)}/100")
+        batch_col.metric("Evidence signals", len(result.get("evidence", [])))
+
+        if result.get("evidence"):
+            st.subheader("Detected indicators")
+            evidence_rows = [
+                {"Indicator": item.get("name"), "Details": json.dumps(item.get("value"), sort_keys=True)}
+                for item in result["evidence"]
+            ]
+            st.dataframe(pd.DataFrame(evidence_rows), use_container_width=True, hide_index=True)
+        else:
+            st.success("No configured threat indicators were found in this event batch.")
+
+        st.caption(result.get("explanation", ""))
+        st.subheader("Recommended actions")
+        for recommendation in result.get("recommendations", []):
+            st.markdown(f"- {recommendation}")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# TAB 10: DEEPFAKE MEDIA ANALYZER
+if selected_navigation == navigation_items[9]:
+    st.markdown('<div class="card-panel">', unsafe_allow_html=True)
+    st.markdown("""
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+        <div style="padding:8px; background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.2); border-radius:10px; font-size:20px;">🎭</div>
+        <div>
+            <h3 style="font-size:17px; font-weight:700; color:#FFFFFF; margin:0;">Deepfake & Media Authenticity Assessment</h3>
+            <p style="font-size:12px; color:#A1A1AA; margin:0;">Screen images, recorded videos/calls, and audio for provenance and model-based voice signals.</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.info(
+        "Image/video results are forensic review signals, not a definitive deepfake classifier. "
+        "Recorded-call audio is analyzed separately with the existing voice model; live calls are not monitored."
+    )
+    media_file = st.file_uploader(
+        "Upload image, video, or audio",
+        type=[
+            "png", "jpg", "jpeg", "webp", "mp4", "mov", "mkv", "avi", "webm", "m4v",
+            "wav", "mp3", "ogg", "m4a", "flac",
+        ],
+        key="deepfake_media_upload",
+    )
+    if media_file is not None:
+        media_bytes = media_file.getvalue()
+        file_suffix = Path(media_file.name).suffix.lower()
+        image_extensions = {".png", ".jpg", ".jpeg", ".webp"}
+        video_extensions = {".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v"}
+        audio_extensions = {".wav", ".mp3", ".ogg", ".m4a", ".flac"}
+
+        if file_suffix in image_extensions:
+            st.image(media_bytes, caption=media_file.name, use_container_width=True)
+        elif file_suffix in video_extensions:
+            st.video(media_bytes)
+        elif file_suffix in audio_extensions:
+            st.audio(media_bytes)
+
+        if st.button("Assess Uploaded Media", type="primary", key="assess_deepfake_media"):
+            st.session_state.pop("last_deepfake_visual_result", None)
+            st.session_state.pop("last_deepfake_voice_result", None)
+            try:
+                if file_suffix in image_extensions:
+                    with st.spinner("Inspecting image metadata and recompression signals..."):
+                        visual_result = analyze_image_bytes(media_bytes, media_file.name)
+                    add_event_to_store(visual_result)
+                    st.session_state["last_deepfake_visual_result"] = visual_result
+                elif file_suffix in video_extensions:
+                    with st.spinner("Sampling video frames and inspecting container metadata..."):
+                        visual_result = analyze_video_bytes(media_bytes, media_file.name)
+                    add_event_to_store(visual_result)
+                    st.session_state["last_deepfake_visual_result"] = visual_result
+                    try:
+                        audio_bytes = extract_video_audio(media_bytes, media_file.name)
+                    except (RuntimeError, ValueError) as exc:
+                        st.caption(f"Video audio was not analyzed: {exc}")
+                    else:
+                        with st.spinner("Analyzing the recorded-call audio track..."):
+                            voice_result = analyze_uploaded_voice(
+                                "recorded_call_audio.wav", audio_bytes, model_name="tiny", language="auto"
+                            )
+                        add_event_to_store(voice_result)
+                        st.session_state["last_deepfake_voice_result"] = voice_result
+                elif file_suffix in audio_extensions:
+                    with st.spinner("Analyzing audio authenticity..."):
+                        voice_result = analyze_uploaded_voice(
+                            f"uploaded_audio{file_suffix}", media_bytes, model_name="tiny", language="auto"
+                        )
+                    add_event_to_store(voice_result)
+                    st.session_state["last_deepfake_voice_result"] = voice_result
+                else:
+                    st.error("Unsupported media type. Choose an image, video, or audio file.")
+            except (ValueError, RuntimeError, FileNotFoundError) as exc:
+                st.error(str(exc))
+            except Exception as exc:
+                st.error(f"Media assessment failed: {exc}")
+
+    visual_result = st.session_state.get("last_deepfake_visual_result")
+    voice_result = st.session_state.get("last_deepfake_voice_result")
+    if visual_result or voice_result:
+        if visual_result:
+            st.subheader("Visual media assessment")
+            st.metric(
+                "Visual risk",
+                f"{visual_result.get('risk_level', 'SAFE')} ({visual_result.get('risk_score', 0)}/100)",
+            )
+            if visual_result.get("evidence"):
+                visual_rows = [
+                    {"Signal": item.get("name"), "Details": json.dumps(item.get("value"), sort_keys=True)}
+                    for item in visual_result["evidence"]
+                ]
+                st.dataframe(pd.DataFrame(visual_rows), use_container_width=True, hide_index=True)
+            st.caption(visual_result.get("explanation", ""))
+
+        if voice_result:
+            st.subheader("Audio deepfake assessment")
+            voice_cols = st.columns(3)
+            voice_cols[0].metric("Voice verdict", voice_result.get("voice_verdict", "N/A"))
+            voice_cols[1].metric("AI confidence", f"{voice_result.get('voice_confidence', 0)}%")
+            voice_cols[2].metric(
+                "Voice risk",
+                f"{voice_result.get('risk_level', 'SAFE')} ({voice_result.get('risk_score', 0)}/100)",
+            )
+            if voice_result.get("evidence"):
+                st.dataframe(pd.DataFrame(voice_result["evidence"]), use_container_width=True, hide_index=True)
+            if voice_result.get("transcript"):
+                with st.expander("Audio transcript"):
+                    st.write(voice_result["transcript"])
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Footer

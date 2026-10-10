@@ -844,14 +844,8 @@ with st.sidebar:
         label_visibility="collapsed",
         key="main_navigation",
     )
-    st.markdown("---")
-    st.markdown("#### Voice analysis model")
-    st.caption(
-        "Retrain with files in data/sample_audio. Filenames containing 'ai' "
-        "are labeled AI; all others are labeled Human."
-    )
     if st.button(
-        "Retrain voice model",
+        "Retrain Model",
         use_container_width=True,
         key="retrain_voice_model",
     ):

@@ -102,7 +102,7 @@ Open your browser at `http://localhost:8501`. You can now:
 1. Upload your own `.wav` or `.mp3` clip, record your voice, or select a demo sample.
 2. Click **Analyze voice** to inspect the verdict, confidence score, and acoustic feature breakdown.
 3. Review the transcript, scam indicators, scam score, and overall risk assessment.
-4. Drop new recordings into `data/sample_audio/` and hit **Train model** in the sidebar to retrain on the fly.
+4. Drop new recordings into `data/sample_audio/` and hit **Retrain Model** in the sidebar. The trainer requires both AI-labeled and Human-labeled audio, then uses the updated model for subsequent analyses.
 
 ---
 
@@ -186,6 +186,5 @@ docker compose up -d --build
 - **React Web UI**: `http://localhost:3000`
 - **FastAPI Backend**: `http://localhost:8000/api`
 - **MongoDB Database**: `localhost:27017`
-
 
 

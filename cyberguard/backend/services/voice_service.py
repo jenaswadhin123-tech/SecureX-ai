@@ -45,6 +45,13 @@ from ..models import ThreatEvent, EvidenceItem
 # ---------------------------------------------------------------------------
 _MODEL = None
 
+
+def replace_loaded_model(model: Any) -> None:
+    """Replace the model held by this process after successful retraining."""
+    global _MODEL
+    _MODEL = model
+
+
 def _load_model() -> Any:
     """Load the trained model from ``model.joblib`` on first use.
     Searches multiple candidate paths to find the file.

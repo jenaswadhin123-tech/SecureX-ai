@@ -3,10 +3,13 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
+
 import joblib
 import numpy as np
 import soundfile as sf
 
+import train
 from src.feature_extraction import extract_features, extract_features_with_summary
 from src.model import train_model
 from src.inference import predict_with_confidence, analyze_audio
@@ -69,6 +72,40 @@ class TestVoiceDetectionPipeline(unittest.TestCase):
         loaded_model = joblib.load(model_path)
         pred = loaded_model.predict(X[:2])
         self.assertEqual(len(pred), 2)
+
+    def test_retrain_from_samples_persists_model_and_reports_dataset(self):
+        files = [Path("human.wav"), Path("ai.wav"), Path("human2.wav"), Path("ai2.wav")]
+        features = np.zeros((4, 3), dtype=np.float32)
+        labels = np.array([0, 1, 0, 1])
+        trained_model = {"trained": True}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            model_path = Path(temp_dir) / "model.joblib"
+            with patch(
+                "train.load_dataset", return_value=(files, features, labels)
+            ):
+                with patch(
+                    "train.train_model", return_value=(trained_model, 0.75)
+                ):
+                    model, accuracy, human_count, ai_count = (
+                        train.retrain_from_samples(model_path)
+                    )
+
+            self.assertEqual(joblib.load(model_path), trained_model)
+            self.assertEqual(model, trained_model)
+            self.assertEqual(accuracy, 0.75)
+            self.assertEqual((human_count, ai_count), (2, 2))
+
+    def test_retrain_from_samples_rejects_one_class(self):
+        files = [Path("ai.wav"), Path("ai2.wav")]
+        features = np.zeros((2, 3), dtype=np.float32)
+        labels = np.array([1, 1])
+
+        with patch("train.load_dataset", return_value=(files, features, labels)):
+            with patch("train.train_model") as train_model_mock:
+                with self.assertRaisesRegex(ValueError, "both Human and AI"):
+                    train.retrain_from_samples(Path("unused-model.joblib"))
+                train_model_mock.assert_not_called()
 
     def test_inference(self):
         # Create a trained model with 2 synthetic samples

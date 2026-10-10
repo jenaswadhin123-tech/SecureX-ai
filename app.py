@@ -18,8 +18,7 @@ from src.inference import analyze_audio
 from src.audio_preprocessing import denoise_audio_file
 from src.scam_analyzer import analyze_scam_intent, determine_overall_risk
 from src.transcription import transcribe_audio
-from train import load_dataset, DATA_DIR
-from src.model import train_model
+from train import AUDIO_EXTENSIONS, DATA_DIR, retrain_from_samples
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_MODEL_PATH = PROJECT_ROOT / "model.joblib"
@@ -59,13 +58,6 @@ def get_model_path() -> Path:
     if DEFAULT_MODEL_PATH.exists():
         return DEFAULT_MODEL_PATH
     return DEFAULT_MODEL_PATH
-
-
-def save_trained_model(model):
-    try:
-        joblib.dump(model, DEFAULT_MODEL_PATH)
-    except (PermissionError, OSError):
-        joblib.dump(model, TEMP_MODEL_PATH)
 
 
 def render_risk_pie_chart(p_human: float, p_ai: float) -> str:
@@ -453,10 +445,11 @@ with st.sidebar:
         st.warning("No Model Loaded")
 
     existing_samples = (
-        list(DATA_DIR.glob("*.wav"))
-        + list(DATA_DIR.glob("*.mp3"))
-        + list(DATA_DIR.glob("*.ogg"))
-        + list(DATA_DIR.glob("*.flac"))
+        [
+            path
+            for path in DATA_DIR.iterdir()
+            if path.is_file() and path.suffix.lower() in AUDIO_EXTENSIONS
+        ]
         if DATA_DIR.exists()
         else []
     )
@@ -523,16 +516,17 @@ with st.sidebar:
     if st.button("Retrain Model", use_container_width=True):
         with st.spinner("Retraining model..."):
             try:
-                files, features, labels = load_dataset()
-                if len(files) == 0:
-                    st.error("No audio samples in data/sample_audio.")
-                else:
-                    model, accuracy = train_model(features, labels)
-                    save_trained_model(model)
-                    st.success(f"Trained! Accuracy: {accuracy:.1%}")
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Error: {e}")
+                _, accuracy, human_count, ai_count = retrain_from_samples(
+                    model_path=get_model_path()
+                )
+            except (OSError, ValueError) as exc:
+                st.error(f"Model retraining failed: {exc}")
+            else:
+                st.success(
+                    f"Trained on {human_count} Human and {ai_count} AI clips! "
+                    f"Validation accuracy: {accuracy:.1%}"
+                )
+                st.rerun()
 
 # --- State Management ---
 if "active_tab" not in st.session_state:

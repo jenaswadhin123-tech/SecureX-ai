@@ -844,6 +844,32 @@ with st.sidebar:
         label_visibility="collapsed",
         key="main_navigation",
     )
+    st.markdown("---")
+    st.markdown("#### Voice analysis model")
+    st.caption(
+        "Retrain with files in data/sample_audio. Filenames containing 'ai' "
+        "are labeled AI; all others are labeled Human."
+    )
+    if st.button(
+        "Retrain voice model",
+        use_container_width=True,
+        key="retrain_voice_model",
+    ):
+        try:
+            with st.spinner("Retraining the voice analysis model..."):
+                from train import retrain_from_samples
+                from cyberguard.backend.services.voice_service import replace_loaded_model
+
+                model, accuracy, human_count, ai_count = retrain_from_samples()
+                replace_loaded_model(model)
+                analyze_uploaded_voice.clear()
+        except (OSError, ValueError) as exc:
+            st.error(f"Voice model retraining failed: {exc}")
+        else:
+            st.success(
+                f"Retrained on {human_count} Human and {ai_count} AI clips "
+                f"(validation accuracy: {accuracy:.1%}). Reanalyze audio to use it."
+            )
 
 st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 

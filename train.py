@@ -4,7 +4,10 @@ Scans data/sample_audio for audio files, extracts acoustic features,
 trains a Random Forest classifier, and saves the serialized model pipeline.
 """
 
+import os
+import tempfile
 from pathlib import Path
+
 import joblib
 import numpy as np
 
@@ -50,32 +53,50 @@ def load_dataset():
     return files, features, labels
 
 
+def retrain_from_samples(model_path: Path = MODEL_PATH):
+    """Train from the sample-audio dataset and atomically persist the model."""
+    files, features, labels = load_dataset()
+    if not files:
+        raise ValueError(f"No audio samples found in {DATA_DIR}.")
+
+    human_count = int(np.sum(labels == 0))
+    ai_count = int(np.sum(labels == 1))
+    if human_count == 0 or ai_count == 0:
+        raise ValueError(
+            "Dataset must contain both Human and AI audio clips. "
+            "Filenames containing 'ai' are labeled AI; all others are labeled Human."
+        )
+
+    model, accuracy = train_model(features, labels)
+    destination = Path(model_path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        prefix=f".{destination.name}.",
+        suffix=".tmp",
+        dir=destination.parent,
+        delete=False,
+    ) as temporary_file:
+        temporary_path = Path(temporary_file.name)
+
+    try:
+        joblib.dump(model, temporary_path)
+        os.replace(temporary_path, destination)
+    finally:
+        if temporary_path.exists():
+            temporary_path.unlink()
+
+    return model, accuracy, human_count, ai_count
+
+
 if __name__ == "__main__":
     print(f"=== Voice Authenticity Classifier Training ===")
     print(f"Looking for audio files in: {DATA_DIR}")
 
-    files, features, labels = load_dataset()
-    print(f"Found {len(files)} audio files.")
-
-    if len(files) == 0:
-        raise SystemExit(
-            f"Add labeled audio files to {DATA_DIR} first, "
-            f"or run 'python scripts/generate_samples.py' to generate initial samples."
-        )
-
-    ai_count = int(np.sum(labels == 1))
-    human_count = int(np.sum(labels == 0))
+    print("Extracting features and training model pipeline...")
+    try:
+        _, accuracy, human_count, ai_count = retrain_from_samples()
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
     print(f"Dataset breakdown: {human_count} Human clips, {ai_count} AI clips.")
-
-    if ai_count == 0 or human_count == 0:
-        raise SystemExit(
-            "Dataset must contain both Human and AI audio clips for training. "
-            "Filenames containing 'ai' are labeled AI; others are labeled Human."
-        )
-
-    print("Training model pipeline...")
-    model, accuracy = train_model(features, labels)
-
-    joblib.dump(model, MODEL_PATH)
     print(f"Model successfully saved to: {MODEL_PATH}")
     print(f"Validation accuracy: {accuracy:.1%}")
